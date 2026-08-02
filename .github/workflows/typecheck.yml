@@ -1,0 +1,22 @@
+name: Lua Typecheck
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup types
+        run: bash scripts/setup_types.sh
+
+      - name: Lua Typecheck
+        uses: mrcjkb/lua-typecheck-action@v1.1.0
+        with:
+          checklevel: Warning

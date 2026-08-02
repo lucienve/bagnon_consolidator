@@ -4,3 +4,5 @@
 !.agents/rules/
 .agents/rules/*
 !.agents/rules/bagnon_consolidator_maintenance_rules.md
+
+.types/

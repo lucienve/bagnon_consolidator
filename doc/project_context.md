@@ -26,3 +26,8 @@ This document tracks the current plan, architectural decisions, and tasks for th
     *   [ ] Syntax checking using `luac -p`
     *   [ ] Stage files in Git index
     *   [ ] Document changes in `walkthrough.md`
+*   **Phase 4: Lua Type Checking Integration**
+    *   [x] Set up type definitions and configurations
+    *   [x] Add annotations to main.lua
+    *   [x] Configure GitHub Actions workflow for static checks
+

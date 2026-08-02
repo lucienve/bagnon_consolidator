@@ -5,6 +5,7 @@
 	All Rights Reserved
 --]]
 
+---@type string, BagnonAddon
 local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local C = LibStub('C_Everywhere')
 
@@ -316,7 +317,7 @@ function Engine:Start(frame)
 		for slot = 1, Addon.Inventory:NumSlots(bag) do
 			local item = Addon.Inventory:GetItemInfo(bag, slot)
 			if item and item ~= Addon.None and item.itemID then
-				local id = item.itemID
+				local id = item.itemID --[[@as number]]
 				local match = false
 
 				if isGuild then
