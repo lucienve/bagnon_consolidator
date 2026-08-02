@@ -28,6 +28,7 @@ bagnon_consolidator/
 ├── .prettierrc              # Prettier formatting options
 ├── Bagnon_Consolidator.toc  # Set dependencies (Bagnon), Author (LVE), loads main.xml
 ├── LICENSE                  # Software license file
+├── README.md                # User guide, installation guidelines, and features
 ├── main.xml                 # XML manifest loading Lua scripts via <Script> tag
 ├── main.lua                 # Core logic, class definitions, and event engine
 └── doc/
