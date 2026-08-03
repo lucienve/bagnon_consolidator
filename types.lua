@@ -10,6 +10,12 @@ SOUNDKIT = {
 }
 
 MAX_GUILDBANK_TABS = 8
+KEYRING_CONTAINER = -2
+
+---@type fun(bag: number, slot: number): string|nil, number|nil, boolean|nil, number|nil, boolean|nil, boolean|nil, string|nil, boolean|nil, boolean|nil, number|nil
+GetContainerItemInfo = nil
+---@type fun(bag: number, slot: number)
+PickupContainerItem = nil
 
 -- Declare LibStub and libraries
 ---@class LibStub
@@ -41,8 +47,8 @@ function C_Everywhere.GetItemInfo(item) end
 ---@field Inventory BagnonInventory
 ---@field BankBags number[]
 ---@field InventoryBags number[]
----@field None any
----@field Guild any
+---@field None BagnonItemInfo
+---@field Guild BagnonFrame
 ---@field ConsolidateButton ConsolidateButton
 ---@field ConsolidateEngine ConsolidateEngine
 _G["Bagnon"] = {} --[[@as BagnonAddon]]

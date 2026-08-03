@@ -168,10 +168,12 @@ function Queue:IsAnySlotLocked()
 
 	if self.isGuild then
 		local tab = GetCurrentGuildBankTab()
-		for slot = 1, 98 do
-			local _, _, locked = GetGuildBankItemInfo(tab, slot)
-			if locked then
-				return true
+		if tab then
+			for slot = 1, 98 do
+				local _, _, locked = GetGuildBankItemInfo(tab, slot)
+				if locked then
+					return true
+				end
 			end
 		end
 	else
