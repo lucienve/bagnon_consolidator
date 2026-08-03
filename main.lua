@@ -9,6 +9,10 @@
 local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local C = LibStub('C_Everywhere')
 
+local function Print(msg)
+	DEFAULT_CHAT_FRAME:AddMessage("|cff82c5ffBagnon Consolidator:|r " .. msg)
+end
+
 local ConsolidateButton = Addon.Tipped:NewClass('ConsolidateButton', 'Button', 'BagnonButtonTemplate')
 
 function ConsolidateButton:New(parent)
@@ -26,22 +30,30 @@ function ConsolidateButton:OnClick()
 	if InCombatLockdown() then
 		return
 	end
-	local bankFrame = Addon.Frames:Get('bank')
-	local guildFrame = Addon.Frames:Get('guild')
 
-	if bankFrame and bankFrame:IsShown() and not bankFrame:IsCached() then
-		Addon.ConsolidateEngine:Start(bankFrame)
-	elseif guildFrame and guildFrame:IsShown() and not guildFrame:IsCached() then
-		Addon.ConsolidateEngine:Start(guildFrame)
-	else
-		DEFAULT_CHAT_FRAME:AddMessage("|cff82c5ffBagnon Consolidator:|r Bank or Guild Bank must be open and active.")
+	if Addon.Frames:IsShown('bank') then
+		local bankFrame = Addon.Frames:Get('bank')
+		if bankFrame and not bankFrame:IsCached() then
+			Addon.ConsolidateEngine:Start(bankFrame)
+			return
+		end
 	end
+
+	if Addon.Frames:IsShown('guild') then
+		local guildFrame = Addon.Frames:Get('guild')
+		if guildFrame and not guildFrame:IsCached() then
+			Addon.ConsolidateEngine:Start(guildFrame)
+			return
+		end
+	end
+
+	Print("Bank or Guild Bank must be open and active.")
 end
 
 -- Hook into Bagnon's Extra Buttons list
 local origGetExtraButtons = Addon.Inventory.GetExtraButtons
 function Addon.Inventory:GetExtraButtons()
-	local buttons = origGetExtraButtons(self) or {}
+	local buttons = origGetExtraButtons and origGetExtraButtons(self) or {}
 	tinsert(buttons, self:GetWidget('ConsolidateButton'))
 	return buttons
 end
@@ -71,19 +83,20 @@ function Queue:AddTabSwitch(tab)
 	})
 end
 
-local eventFrame = CreateFrame("Frame")
 function Queue:WaitForEvent(event, callback)
+	local frame = CreateFrame("Frame")
 	local triggered = false
 	local function trigger()
 		if not triggered then
 			triggered = true
-			eventFrame:UnregisterEvent(event)
+			frame:UnregisterAllEvents()
+			frame:SetScript("OnEvent", nil)
 			callback()
 		end
 	end
 
-	eventFrame:RegisterEvent(event)
-	eventFrame:SetScript("OnEvent", function(self, evt)
+	frame:RegisterEvent(event)
+	frame:SetScript("OnEvent", function(self, evt)
 		if evt == event then
 			trigger()
 		end
@@ -92,9 +105,14 @@ function Queue:WaitForEvent(event, callback)
 	C_Timer.After(1.5, trigger) -- 1.5s timeout safety
 end
 
-local function IsSlotLocked(frame, bagOrTab, slot)
-	local info = frame:GetItemInfo(bagOrTab, slot)
-	return info and info ~= Addon.None and info.isLocked
+local function IsSlotLocked(isGuild, bagOrTab, slot)
+	if isGuild and bagOrTab >= 1 and bagOrTab <= MAX_GUILDBANK_TABS then
+		local _, _, locked = GetGuildBankItemInfo(bagOrTab, slot)
+		return locked
+	else
+		local info = C.GetContainerItemInfo(bagOrTab, slot)
+		return info and info.isLocked
+	end
 end
 
 function Queue:Start(frame)
@@ -122,7 +140,7 @@ function Queue:ProcessNext()
 	if #self.tasks == 0 then
 		self:Stop()
 		PlaySound(SOUNDKIT.UI_BAG_SORTING_01)
-		DEFAULT_CHAT_FRAME:AddMessage("|cff82c5ffBagnon Consolidator:|r Consolidation complete.")
+		Print("Consolidation complete.")
 		return
 	end
 
@@ -143,7 +161,7 @@ function Queue:ProcessNext()
 	end
 
 	if task.type == "move" then
-		if IsSlotLocked(self.frame, task.fromBag, task.fromSlot) or IsSlotLocked(self.frame, task.toBag, task.toSlot) then
+		if IsSlotLocked(self.isGuild, task.fromBag, task.fromSlot) or IsSlotLocked(self.isGuild, task.toBag, task.toSlot) then
 			C_Timer.After(0.1, function() self:ProcessNext() end)
 			return
 		end
@@ -276,24 +294,14 @@ function Engine:Start(frame)
 
 	-- 1. Scan Bank container to find items and active tabs
 	if isGuild then
-		for tab = 1, 8 do
+		for tab = 1, MAX_GUILDBANK_TABS do
 			local bagInfo = frame:GetBagInfo(tab)
 			local items = bagInfo and bagInfo.items
 			if items then
-				for slot, data in pairs(items) do
-					local id
-					if data:sub(1,9) == 'battlepet' then
-						id = tonumber(data:match(':(%d+):%d+:%d+'))
-					elseif data:sub(1,9) == 'keystone:' then
-						id = tonumber(data:match(':(%d+)'))
-					else
-						local values = strsplit(';', data)
-						id = tonumber(values:match('^(%d+)')) or tonumber(values:match('item:(%d+)'))
-						if not id then
-							id = select(1, C.GetItemInfoInstant('item:' .. values))
-						end
-					end
-					if id then
+				for slot in pairs(items) do
+					local item = frame:Super(Addon.Guild):GetItemInfo(tab, slot)
+					if item and item ~= Addon.None and item.itemID then
+						local id = item.itemID
 						itemTabs[id] = itemTabs[id] or {}
 						itemTabs[id][tab] = true
 					end
@@ -331,7 +339,7 @@ function Engine:Start(frame)
 
 						if tabCount > 1 then
 							local link = item.hyperlink or ("item:" .. id)
-							DEFAULT_CHAT_FRAME:AddMessage("|cff82c5ffBagnon Consolidator:|r " .. link .. " is present in multiple guild bank tabs. Skipped.")
+							Print(link .. " is present in multiple guild bank tabs. Skipped.")
 							itemTabs[id] = nil
 						elseif tabCount == 1 then
 							match = true
@@ -353,7 +361,7 @@ function Engine:Start(frame)
 
 	if isGuild then
 		local tabTasks = {}
-		for tab = 1, 8 do
+		for tab = 1, MAX_GUILDBANK_TABS do
 			tabTasks[tab] = {}
 		end
 
@@ -385,7 +393,7 @@ function Engine:Start(frame)
 					end
 
 					local bagSlots = {}
-					local maxStack = 20
+					local maxStack = 1
 					for _, bag in ipairs(Addon.InventoryBags) do
 						for slot = 1, Addon.Inventory:NumSlots(bag) do
 							local item = Addon.Inventory:GetItemInfo(bag, slot)
@@ -425,7 +433,7 @@ function Engine:Start(frame)
 			end
 
 			local bagSlots = {}
-			local maxStack = 20
+			local maxStack = 1
 			for _, bag in ipairs(Addon.InventoryBags) do
 				for slot = 1, Addon.Inventory:NumSlots(bag) do
 					local item = Addon.Inventory:GetItemInfo(bag, slot)
@@ -446,6 +454,6 @@ function Engine:Start(frame)
 		Queue:Start(frame)
 	else
 		PlaySound(847) -- Error sound
-		DEFAULT_CHAT_FRAME:AddMessage("|cff82c5ffBagnon Consolidator:|r No items need consolidation.")
+		Print("No items need consolidation.")
 	end
 end

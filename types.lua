@@ -9,6 +9,8 @@ SOUNDKIT = {
 	UI_BAG_SORTING_01 = 0
 }
 
+MAX_GUILDBANK_TABS = 8
+
 -- Declare LibStub and libraries
 ---@class LibStub
 local LibStub = {}
@@ -68,9 +70,12 @@ function ConsolidateButton:ShowTooltip(title, text) end
 
 ---@class BagnonFrames
 local BagnonFrames = {}
----@param name 'bank'|'guild'|string
+---@param name 'bank'|'guild'|'inventory'|string
 ---@return BagnonFrame|nil
 function BagnonFrames:Get(name) end
+---@param name 'bank'|'guild'|'inventory'|string
+---@return boolean
+function BagnonFrames:IsShown(name) end
 
 ---@class BagnonFrame : Frame
 ---@field id string

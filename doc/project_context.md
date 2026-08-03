@@ -18,14 +18,14 @@ This document tracks the current plan, architectural decisions, and tasks for th
     *   [x] Set up repository root directory structure
     *   [x] Create `Bagnon_Consolidator.toc` and `main.xml`
 *   **Phase 2: Addon Script Implementation**
-    *   [ ] Hook UI frames to inject consolidation button
-    *   [ ] Write the scan and check algorithms (multi-tab check)
-    *   [ ] Write the recursive stack optimization algorithm
-    *   [ ] Implement asynchronous event-driven queue runner
+    *   [x] Hook UI frames to inject consolidation button
+    *   [x] Write the scan and check algorithms (multi-tab check)
+    *   [x] Write the recursive stack optimization algorithm
+    *   [x] Implement asynchronous event-driven queue runner
 *   **Phase 3: Verification & Staging**
-    *   [ ] Syntax checking using `luac -p`
-    *   [ ] Stage files in Git index
-    *   [ ] Document changes in `walkthrough.md`
+    *   [x] Syntax checking using `luac -p`
+    *   [x] Stage files in Git index
+    *   [x] Document changes in `walkthrough.md`
 *   **Phase 4: Lua Type Checking Integration**
     *   [x] Set up type definitions and configurations
     *   [x] Add annotations to main.lua
