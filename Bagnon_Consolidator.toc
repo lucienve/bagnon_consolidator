@@ -3,8 +3,10 @@
 ## Notes: Auto-deposits and consolidates item stacks from your bags to the bank or guild bank.
 ## RequiredDeps: Bagnon
 ## Author: LVE
+## Group: BagBrother
+
 ## Version: 1.0.0
 ## IconTexture: Interface\Icons\Spell_ChargePositive
-## Category: Bags
+## Category: Bags & Inventory
 
 main.xml
