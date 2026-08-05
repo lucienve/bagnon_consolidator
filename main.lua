@@ -10,6 +10,34 @@ local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local C = LibStub('C_Everywhere')
 local KEYRING_CONTAINER = KEYRING_CONTAINER or -2
 
+local loaderFrame = CreateFrame("Frame")
+loaderFrame:RegisterEvent("ADDON_LOADED")
+loaderFrame:SetScript("OnEvent", function(self, event, name)
+	if name == "Bagnon_Consolidator" then
+		BagnonConsolidatorDB = BagnonConsolidatorDB or {}
+		BagnonConsolidatorDB.guildTabs = BagnonConsolidatorDB.guildTabs or {}
+		self:UnregisterEvent("ADDON_LOADED")
+	end
+end)
+
+local function GetGuildKey()
+	local guildName, _, _, guildRealm = GetGuildInfo("player")
+	if not guildName then return nil end
+	return guildName .. "-" .. (guildRealm or GetRealmName())
+end
+
+local function GetItemName(item)
+	if item.hyperlink then
+		local name = item.hyperlink:match("%[(.-)%]")
+		if name then return name end
+	end
+	if item.itemID then
+		local name = C.C_Item.GetItemInfo(item.itemID)
+		if name then return name end
+	end
+	return "Unknown Item"
+end
+
 local function Print(msg)
 	DEFAULT_CHAT_FRAME:AddMessage("|cff82c5ffBagnon Consolidator:|r " .. msg)
 end
@@ -501,6 +529,7 @@ function Engine:Start(frame)
 
 	-- 1. Scan Bank container to find items and active tabs
 	if isGuild then
+		local itemCache = {}
 		for tab = 1, MAX_GUILDBANK_TABS do
 			local bagInfo = frame:GetBagInfo(tab)
 			local items = bagInfo and bagInfo.items
@@ -511,7 +540,35 @@ function Engine:Start(frame)
 						local id = item.itemID
 						itemTabs[id] = itemTabs[id] or {}
 						itemTabs[id][tab] = true
+						if not itemCache[id] then
+							itemCache[id] = item
+						end
 					end
+				end
+			end
+		end
+
+		local guildKey = GetGuildKey()
+		if guildKey then
+			BagnonConsolidatorDB.guildTabs[guildKey] = BagnonConsolidatorDB.guildTabs[guildKey] or {}
+			for id, tabs in pairs(itemTabs) do
+				local tabCount = 0
+				local targetTab
+				for tab in pairs(tabs) do
+					tabCount = tabCount + 1
+					targetTab = tab
+				end
+				if tabCount == 1 then
+					local item = itemCache[id]
+					local itemName = item and GetItemName(item) or "Unknown Item"
+					local tabName = GetGuildBankTabInfo(targetTab)
+					BagnonConsolidatorDB.guildTabs[guildKey][id] = {
+						tab = targetTab,
+						name = itemName,
+						tabName = tabName
+					}
+				elseif tabCount > 1 then
+					BagnonConsolidatorDB.guildTabs[guildKey][id] = nil
 				end
 			end
 		end
@@ -555,6 +612,21 @@ function Engine:Start(frame)
 								elseif tabCount == 1 then
 									match = true
 									backpackMatches[id] = targetTab
+								end
+							elseif not backpackMatches[id] then
+								local guildKey = GetGuildKey()
+								local entry = guildKey and BagnonConsolidatorDB.guildTabs[guildKey] and BagnonConsolidatorDB.guildTabs[guildKey][id]
+								local targetTab = entry and entry.tab
+								if targetTab then
+									local _, _, _, canDeposit = GetGuildBankTabInfo(targetTab)
+									if canDeposit then
+										itemTabs[id] = { [targetTab] = true }
+										match = true
+										backpackMatches[id] = targetTab
+										Debug("Remembered tab " .. tostring(targetTab) .. " for item ID " .. tostring(id))
+									else
+										Debug("Remembered tab " .. tostring(targetTab) .. " for item ID " .. tostring(id) .. " but player lacks deposit permission.")
+									end
 								end
 							end
 						else

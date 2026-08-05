@@ -12,6 +12,18 @@ SOUNDKIT = {
 MAX_GUILDBANK_TABS = 8
 KEYRING_CONTAINER = -2
 
+---@class BagnonConsolidatorDBEntry
+---@field tab number
+---@field name string
+---@field tabName string|nil
+
+---@class BagnonConsolidatorDB
+---@field guildTabs table<string, table<number, BagnonConsolidatorDBEntry>>
+BagnonConsolidatorDB = {}
+
+---@type fun(tab: number): string|nil, string|nil, boolean|nil, boolean|nil, number|nil, number|nil
+GetGuildBankTabInfo = nil
+
 ---@type fun(bag: number, slot: number): string|nil, number|nil, boolean|nil, number|nil, boolean|nil, boolean|nil, string|nil, boolean|nil, boolean|nil, number|nil
 GetContainerItemInfo = nil
 ---@type fun(bag: number, slot: number)

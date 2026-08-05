@@ -5,7 +5,8 @@
 	],
 	"workspace.ignoreDir": [
 		"libs",
-		".types"
+		".types",
+		"scripts"
 	],
 	"diagnostics.libraryFiles": "Disable",
 	"diagnostics.ignoredFiles": "Disable"
