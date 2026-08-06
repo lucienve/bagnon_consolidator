@@ -593,7 +593,7 @@ function Engine:Start(frame)
 					if item and item ~= Addon.None and item.itemID then
 						duplicateItems[item.itemID] = true
 						if charKey then
-							BagnonConsolidatorDB.personalBanks[charKey][item.itemID] = true
+							BagnonConsolidatorDB.personalBanks[charKey][item.itemID] = GetItemName(item)
 						end
 					end
 				end

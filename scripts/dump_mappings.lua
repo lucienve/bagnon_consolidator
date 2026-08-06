@@ -15,45 +15,87 @@ BagnonConsolidatorDB = nil
 
 f() -- Execute the file to populate the BagnonConsolidatorDB global table
 
-if not BagnonConsolidatorDB or not BagnonConsolidatorDB.guildTabs then
-	print("No guild bank tab mappings found in: " .. path)
-	os.exit(0)
+if not BagnonConsolidatorDB then
+	print("Error: BagnonConsolidatorDB not found in: " .. path)
+	os.exit(1)
 end
 
+print("Bagnon Consolidator Mappings Dump")
+print(string.rep("=", 32))
+print("")
+
 local hasGuilds = false
-for guildKey, items in pairs(BagnonConsolidatorDB.guildTabs) do
-	hasGuilds = true
-	print("Guild / Realm: " .. guildKey)
-	print(string.rep("=", #guildKey + 15))
-	
-	local sorted = {}
-	for itemID, entry in pairs(items) do
-		table.insert(sorted, {
-			id = itemID,
-			tab = entry.tab,
-			name = entry.name or "Unknown Item",
-			tabName = entry.tabName or ("Tab " .. tostring(entry.tab))
-		})
-	end
-	
-	-- Sort by tab index first, then alphabetically by item name
-	table.sort(sorted, function(a, b)
-		if a.tab ~= b.tab then
-			return a.tab < b.tab
+if BagnonConsolidatorDB.guildTabs then
+	for guildKey, items in pairs(BagnonConsolidatorDB.guildTabs) do
+		hasGuilds = true
+		print("Guild / Realm: " .. guildKey)
+		print(string.rep("-", #guildKey + 15))
+		
+		local sorted = {}
+		for itemID, entry in pairs(items) do
+			table.insert(sorted, {
+				id = itemID,
+				tab = entry.tab,
+				name = entry.name or "Unknown Item",
+				tabName = entry.tabName or ("Tab " .. tostring(entry.tab))
+			})
 		end
-		return a.name < b.name
-	end)
-	
-	if #sorted > 0 then
-		for _, entry in ipairs(sorted) do
-			print(string.format("  - Tab %d (%-12s): [%d] %s", entry.tab, entry.tabName, entry.id, entry.name))
+		
+		-- Sort by tab index first, then alphabetically by item name
+		table.sort(sorted, function(a, b)
+			if a.tab ~= b.tab then
+				return a.tab < b.tab
+			end
+			return a.name < b.name
+		end)
+		
+		if #sorted > 0 then
+			for _, entry in ipairs(sorted) do
+				print(string.format("  - Tab %d (%-12s): [%d] %s", entry.tab, entry.tabName, entry.id, entry.name))
+			end
+		else
+			print("  (No mappings recorded)")
 		end
-	else
-		print("  (No mappings recorded)")
+		print("")
 	end
-	print("")
 end
 
 if not hasGuilds then
-	print("No guild bank tab mappings found in: " .. path)
+	print("No guild bank tab mappings found.")
+	print("")
+end
+
+local hasPersonal = false
+if BagnonConsolidatorDB.personalBanks then
+	for charKey, items in pairs(BagnonConsolidatorDB.personalBanks) do
+		hasPersonal = true
+		print("Character / Realm: " .. charKey)
+		print(string.rep("-", #charKey + 19))
+		
+		local sorted = {}
+		for itemID, name in pairs(items) do
+			table.insert(sorted, {
+				id = itemID,
+				name = name or "Unknown Item"
+			})
+		end
+		
+		-- Sort alphabetically by item name
+		table.sort(sorted, function(a, b)
+			return a.name < b.name
+		end)
+		
+		if #sorted > 0 then
+			for _, entry in ipairs(sorted) do
+				print(string.format("  - [%d] %s", entry.id, entry.name))
+			end
+		else
+			print("  (No items recorded)")
+		end
+		print("")
+	end
+end
+
+if not hasPersonal then
+	print("No personal bank mappings found.")
 end
