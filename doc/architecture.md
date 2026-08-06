@@ -95,3 +95,12 @@ Because item moves in WoW are throttled and make slots temporarily locked, the e
     *   `BAG_UPDATE_DELAYED` (Personal Bank)
     *   `GUILDBANKBAGSLOTS_CHANGED` (Guild Bank)
 *   **Timeout Safety**: To prevent UI lockup if a packet is lost or a move fails silently, `Queue:WaitForEvent` uses `C_Timer.After(1.5, trigger)` to automatically resume queue processing after a 1.5-second timeout.
+
+---
+
+## 7. Database Memory & Saved Mappings
+
+To enable consolidation of items when they are not currently present in the target container, the addon persists mapping data inside `BagnonConsolidatorDB`:
+
+*   **Guild Bank Tab Memories (`guildTabs`)**: Maps `guildKey` (computed as `GuildName-GuildRealm`) to a lookup table of `itemID` -> `{ tab, name, tabName }`. Items are added when they are observed on a single guild bank tab and removed if they are seen on multiple tabs (to preserve player categorization).
+*   **Personal Bank Memories (`personalBanks`)**: Maps `characterKey` (computed as `CharacterName-RealmName`) to a lookup table of `itemID` -> `true`. Items are recorded here when they are observed in a character's personal bank bags during a consolidation scan, and are used to authorize consolidation of that item even if the personal bank has 0 copies left of it.

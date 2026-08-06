@@ -19,6 +19,7 @@ KEYRING_CONTAINER = -2
 
 ---@class BagnonConsolidatorDB
 ---@field guildTabs table<string, table<number, BagnonConsolidatorDBEntry>>
+---@field personalBanks table<string, table<number, boolean>>
 BagnonConsolidatorDB = {}
 
 ---@type fun(tab: number): string|nil, string|nil, boolean|nil, boolean|nil, number|nil, number|nil

@@ -18,7 +18,8 @@ This document tracks the current plan, architectural decisions, and tasks for th
 18. **Dynamic Queue Events**: Automatically routes events and delays based on the specific move task containers (e.g., waiting for `BAG_UPDATE_DELAYED` for backpack-only moves) rather than the active UI window type.
 19. **Remainder Recovery**: Invokes `ClearCursor()` before every move operation to automatically return any leftover stack items from partial merges to their origin slots.
 20. **Guild Bank Tab Remembering**: Remembers the mapping of item IDs to their guild bank tabs in a per-account database (`BagnonConsolidatorDB`) scoped by guild and realm keys. Enables consolidation to empty slots of a remembered tab when that item is not currently present in the guild bank.
+21. **Personal Bank Remembering**: Remembers the item IDs that each character has previously stored in their individual bank in a per-account database (`BagnonConsolidatorDB.personalBanks`) scoped by `CharacterName-RealmName`. Enables consolidation to empty bank slots when that item is not currently present in the character's bank but was there in the past.
 
 ## Future Plans
 
-1.  **Improve Remembered Mappings Interaction**: Add a slash command (e.g., `/bconsolidator forget <itemID>` or `/bconsolidator reset`) or a simple GUI configuration panel to let users manually clear, reset, or manage the learned guild bank tab mappings.
+1.  **Improve Remembered Mappings Interaction**: Add a slash command (e.g., `/bconsolidator forget <itemID>` or `/bconsolidator reset`) or a simple GUI configuration panel to let users manually clear, reset, or manage the learned guild bank tab and personal bank mappings.

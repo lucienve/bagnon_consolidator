@@ -16,9 +16,17 @@ loaderFrame:SetScript("OnEvent", function(self, event, name)
 	if name == "Bagnon_Consolidator" then
 		BagnonConsolidatorDB = BagnonConsolidatorDB or {}
 		BagnonConsolidatorDB.guildTabs = BagnonConsolidatorDB.guildTabs or {}
+		BagnonConsolidatorDB.personalBanks = BagnonConsolidatorDB.personalBanks or {}
 		self:UnregisterEvent("ADDON_LOADED")
 	end
 end)
+
+local function GetCharacterKey()
+	local name = UnitName("player")
+	local realm = GetRealmName()
+	if not name or not realm then return nil end
+	return name .. "-" .. realm
+end
 
 local function GetGuildKey()
 	local guildName, _, _, guildRealm = GetGuildInfo("player")
@@ -573,12 +581,20 @@ function Engine:Start(frame)
 			end
 		end
 	else
+		local charKey = GetCharacterKey()
+		if charKey then
+			BagnonConsolidatorDB.personalBanks[charKey] = BagnonConsolidatorDB.personalBanks[charKey] or {}
+		end
+
 		if Addon.BankBags then
 			for _, bag in ipairs(Addon.BankBags) do
 				for slot = 1, frame:NumSlots(bag) do
 					local item = frame:GetItemInfo(bag, slot)
 					if item and item ~= Addon.None and item.itemID then
 						duplicateItems[item.itemID] = true
+						if charKey then
+							BagnonConsolidatorDB.personalBanks[charKey][item.itemID] = true
+						end
 					end
 				end
 			end
@@ -630,7 +646,9 @@ function Engine:Start(frame)
 								end
 							end
 						else
-							if duplicateItems[id] then
+							local charKey = GetCharacterKey()
+							local remembered = charKey and BagnonConsolidatorDB.personalBanks[charKey] and BagnonConsolidatorDB.personalBanks[charKey][id]
+							if duplicateItems[id] or remembered then
 								match = true
 								backpackMatches[id] = true
 							end
