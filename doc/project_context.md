@@ -19,6 +19,7 @@ This document tracks the current plan, architectural decisions, and tasks for th
 19. **Remainder Recovery**: Invokes `ClearCursor()` before every move operation to automatically return any leftover stack items from partial merges to their origin slots.
 20. **Guild Bank Tab Remembering**: Remembers the mapping of item IDs to their guild bank tabs in a per-account database (`BagnonConsolidatorDB`) scoped by guild and realm keys. Enables consolidation to empty slots of a remembered tab when that item is not currently present in the guild bank.
 21. **Personal Bank Remembering**: Remembers the item IDs that each character has previously stored in their individual bank in a per-account database (`BagnonConsolidatorDB.personalBanks`) scoped by `CharacterName-RealmName`. Enables consolidation to empty bank slots when that item is not currently present in the character's bank but was there in the past.
+22. **Personal/Guild Mutual Exclusivity**: Enforces that an item has at most one designated location category. If an item is ever observed in a character's personal bank, its remembered location is immediately cleared from `guildTabs` for all guilds and characters. It is also skipped during guild bank consolidation, printing a warning once per item ID per run.
 
 ## Future Plans
 

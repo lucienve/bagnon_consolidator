@@ -34,6 +34,18 @@ local function GetGuildKey()
 	return guildName .. "-" .. (guildRealm or GetRealmName())
 end
 
+local function IsItemInAnyPersonalBank(itemID)
+	if not BagnonConsolidatorDB or not BagnonConsolidatorDB.personalBanks then
+		return false
+	end
+	for charKey, items in pairs(BagnonConsolidatorDB.personalBanks) do
+		if items[itemID] then
+			return true
+		end
+	end
+	return false
+end
+
 local function GetItemName(item)
 	if item.hyperlink then
 		local name = item.hyperlink:match("%[(.-)%]")
@@ -534,6 +546,7 @@ function Engine:Start(frame)
 	local itemTabs = {}
 	Engine.itemTabs = itemTabs
 	local duplicateItems = {}
+	local warnedPersonalItems = {}
 
 	-- 1. Scan Bank container to find items and active tabs
 	if isGuild then
@@ -567,14 +580,19 @@ function Engine:Start(frame)
 					targetTab = tab
 				end
 				if tabCount == 1 then
-					local item = itemCache[id]
-					local itemName = item and GetItemName(item) or "Unknown Item"
-					local tabName = GetGuildBankTabInfo(targetTab)
-					BagnonConsolidatorDB.guildTabs[guildKey][id] = {
-						tab = targetTab,
-						name = itemName,
-						tabName = tabName
-					}
+					if IsItemInAnyPersonalBank(id) then
+						BagnonConsolidatorDB.guildTabs[guildKey][id] = nil
+						Debug("Skipped adding item ID " .. id .. " to guildTabs because it exists in personal bank.")
+					else
+						local item = itemCache[id]
+						local itemName = item and GetItemName(item) or "Unknown Item"
+						local tabName = GetGuildBankTabInfo(targetTab)
+						BagnonConsolidatorDB.guildTabs[guildKey][id] = {
+							tab = targetTab,
+							name = itemName,
+							tabName = tabName
+						}
+					end
 				elseif tabCount > 1 then
 					BagnonConsolidatorDB.guildTabs[guildKey][id] = nil
 				end
@@ -595,6 +613,14 @@ function Engine:Start(frame)
 						if charKey then
 							BagnonConsolidatorDB.personalBanks[charKey][item.itemID] = GetItemName(item)
 						end
+						if BagnonConsolidatorDB.guildTabs then
+							for gKey, items in pairs(BagnonConsolidatorDB.guildTabs) do
+								if items[item.itemID] then
+									items[item.itemID] = nil
+									Debug("Removed guild bank location for item ID " .. item.itemID .. " on " .. gKey)
+								end
+							end
+						end
 					end
 				end
 			end
@@ -613,14 +639,20 @@ function Engine:Start(frame)
 						local match = false
 
 						if isGuild then
-							if itemTabs[id] then
+							if IsItemInAnyPersonalBank(id) then
+								if not warnedPersonalItems[id] then
+									warnedPersonalItems[id] = true
+									local link = item.hyperlink or ("item:" .. id)
+									Print(link .. " has been designated as a personal bank item. Skipped guild bank consolidation.")
+								end
+							elseif itemTabs[id] then
 								local tabCount = 0
 								local targetTab
 								for tab in pairs(itemTabs[id]) do
 									tabCount = tabCount + 1
 									targetTab = tab
 								end
-
+ 
 								if tabCount > 1 then
 									local link = item.hyperlink or ("item:" .. id)
 									Print(link .. " is present in multiple guild bank tabs. Skipped.")
