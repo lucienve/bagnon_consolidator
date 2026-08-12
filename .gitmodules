@@ -1,0 +1,3 @@
+[submodule "libs/libItemMove"]
+	path = libs/libItemMove
+	url = https://github.com/lucienve/libItemMove.git

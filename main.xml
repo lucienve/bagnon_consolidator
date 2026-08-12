@@ -1,3 +1,7 @@
 <Ui>
+	<!-- Embed LibItemMove-1.0 library -->
+	<Include file="libs/libItemMove/libItemMove.xml"/>
+
+	<!-- Bagnon Consolidator main script -->
 	<Script file="main.lua"/>
 </Ui>
