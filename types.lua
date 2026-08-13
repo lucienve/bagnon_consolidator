@@ -20,6 +20,7 @@ KEYRING_CONTAINER = -2
 ---@class BagnonConsolidatorDB
 ---@field guildTabs table<string, table<number, BagnonConsolidatorDBEntry>>
 ---@field personalBanks table<string, table<number, string>>
+---@field enableDebug boolean|nil
 BagnonConsolidatorDB = {}
 
 ---@type fun(tab: number): string|nil, string|nil, boolean|nil, boolean|nil, number|nil, number|nil
@@ -82,10 +83,11 @@ local ConsolidateButton = {}
 ---@return ConsolidateButton
 function ConsolidateButton:New(parent) end
 function ConsolidateButton:OnEnter() end
-function ConsolidateButton:OnClick() end
+---@param button string|nil
+function ConsolidateButton:OnClick(button) end
 ---@param title string
----@param text string
-function ConsolidateButton:ShowTooltip(title, text) end
+---@param ... string
+function ConsolidateButton:ShowTooltip(title, ...) end
 
 ---@class BagnonFrames
 local BagnonFrames = {}

@@ -21,6 +21,7 @@ This document tracks the current plan, architectural decisions, and tasks for th
 15. **Precision Transaction Verification**: Utilizes exact expected destination slot quantities and verifies that the cursor is empty before declaring a move transaction complete. This prevents premature verification when item splits are still held on the cursor.
 16. **Subclassed Bag Family Querying**: Shifted bag family queries from direct API adapter calls to context-specific `GetBagFamily(bag)` methods, preventing incorrect player bag queries for guild bank tabs.
 17. **Lag Tolerance**: Increased timeout thresholds for transaction verification and lock checks to 5 seconds to better handle WoW client/server synchronization lag during peak hours.
+18. **Options Menu and Debugging Logs**: Added a right-click options menu to the consolidator button. Developed using the Blizzard `MenuUtil` context menu system, it currently features a checkbox to toggle the debugging logs (off by default) which persists across sessions in `BagnonConsolidatorDB.enableDebug`.
 
 ## Future Plans
 

@@ -8,6 +8,7 @@
 ---@type string, BagnonAddon
 local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local C = LibStub('C_Everywhere')
+local LibItemMove = LibStub('LibItemMove-1.0')
 local KEYRING_CONTAINER = KEYRING_CONTAINER or -2
 
 local loaderFrame = CreateFrame("Frame")
@@ -17,6 +18,10 @@ loaderFrame:SetScript("OnEvent", function(self, event, name)
 		BagnonConsolidatorDB = BagnonConsolidatorDB or {}
 		BagnonConsolidatorDB.guildTabs = BagnonConsolidatorDB.guildTabs or {}
 		BagnonConsolidatorDB.personalBanks = BagnonConsolidatorDB.personalBanks or {}
+		if BagnonConsolidatorDB.enableDebug == nil then
+			BagnonConsolidatorDB.enableDebug = false
+		end
+		LibItemMove.Debug = BagnonConsolidatorDB.enableDebug
 		self:UnregisterEvent("ADDON_LOADED")
 	end
 end)
@@ -62,9 +67,8 @@ local function Print(msg)
 	DEFAULT_CHAT_FRAME:AddMessage("|cff82c5ffBagnon Consolidator:|r " .. msg)
 end
 
-local DEBUG = true
 local function Debug(msg)
-	if DEBUG then
+	if BagnonConsolidatorDB and BagnonConsolidatorDB.enableDebug then
 		DEFAULT_CHAT_FRAME:AddMessage("|cff82c5ffBagnon Consolidator (Debug):|r " .. msg)
 	end
 end
@@ -79,10 +83,29 @@ function ConsolidateButton:New(parent)
 end
 
 function ConsolidateButton:OnEnter()
-	self:ShowTooltip("Consolidate to Bank", "|cffbbbbbbFinds duplicate items in your bags and moves them to the open bank, consolidating stacks to save space.|r")
+	self:ShowTooltip(
+		"Consolidate to Bank",
+		"|cffbbbbbbFinds duplicate items in your bags and moves them to the open bank, consolidating stacks to save space.|r",
+		"|R Options"
+	)
 end
 
-function ConsolidateButton:OnClick()
+function ConsolidateButton:OnClick(button)
+	if button == "RightButton" then
+		MenuUtil.CreateContextMenu(self, function(_, menu)
+			menu:SetTag("BagnonConsolidatorOptions")
+			menu:CreateTitle("Bagnon Consolidator")
+
+			menu:CreateCheckbox("Enable Debug Logs",
+				function() return BagnonConsolidatorDB and BagnonConsolidatorDB.enableDebug or false end,
+				function(_, _, menu)
+					BagnonConsolidatorDB.enableDebug = not BagnonConsolidatorDB.enableDebug
+					LibItemMove.Debug = BagnonConsolidatorDB.enableDebug
+				end)
+		end)
+		return
+	end
+
 	if InCombatLockdown() then
 		Print("Cannot consolidate in combat.")
 		return
@@ -122,8 +145,6 @@ Addon.ConsolidateButton = ConsolidateButton
 
 local Engine = {}
 Addon.ConsolidateEngine = Engine
-local LibItemMove = LibStub('LibItemMove-1.0')
-LibItemMove.Debug = true
 
 local isConsolidating = false
 
