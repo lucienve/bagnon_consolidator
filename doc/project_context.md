@@ -17,6 +17,10 @@ This document tracks the current plan, architectural decisions, and tasks for th
 11. **Guild Bank Tab Remembering**: Remembers the mapping of item IDs to their guild bank tabs in a per-account database (`BagnonConsolidatorDB`) scoped by guild and realm keys. Enables consolidation to empty slots of a remembered tab when that item is not currently present in the guild bank.
 12. **Personal Bank Remembering**: Remembers the item IDs that each character has previously stored in their individual bank in a per-account database (`BagnonConsolidatorDB.personalBanks`) scoped by `CharacterName-RealmName`. Enables consolidation to empty bank slots when that item is not currently present in the character's bank but was there in the past.
 13. **Personal/Guild Mutual Exclusivity**: Enforces that an item has at most one designated location category. If an item is ever observed in a character's personal bank, its remembered location is immediately cleared from `guildTabs` for all guilds and characters. It is also skipped during guild bank consolidation, printing a warning once per item ID per run.
+14. **Extended Safety and Synchronization in Guild Bank Moves**: Added robust locking checks via `GetGuildBankItemInfo(tab, slot)` in `IsTargetSlotLocked` and `IsSourceSlotLocked` to prevent transaction collision and cursor lockups.
+15. **Precision Transaction Verification**: Utilizes exact expected destination slot quantities and verifies that the cursor is empty before declaring a move transaction complete. This prevents premature verification when item splits are still held on the cursor.
+16. **Subclassed Bag Family Querying**: Shifted bag family queries from direct API adapter calls to context-specific `GetBagFamily(bag)` methods, preventing incorrect player bag queries for guild bank tabs.
+17. **Lag Tolerance**: Increased timeout thresholds for transaction verification and lock checks to 5 seconds to better handle WoW client/server synchronization lag during peak hours.
 
 ## Future Plans
 

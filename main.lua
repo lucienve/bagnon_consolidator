@@ -62,7 +62,7 @@ local function Print(msg)
 	DEFAULT_CHAT_FRAME:AddMessage("|cff82c5ffBagnon Consolidator:|r " .. msg)
 end
 
-local DEBUG = false
+local DEBUG = true
 local function Debug(msg)
 	if DEBUG then
 		DEFAULT_CHAT_FRAME:AddMessage("|cff82c5ffBagnon Consolidator (Debug):|r " .. msg)
@@ -123,6 +123,7 @@ Addon.ConsolidateButton = ConsolidateButton
 local Engine = {}
 Addon.ConsolidateEngine = Engine
 local LibItemMove = LibStub('LibItemMove-1.0')
+LibItemMove.Debug = true
 
 local isConsolidating = false
 
