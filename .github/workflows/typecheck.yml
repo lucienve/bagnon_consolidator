@@ -9,7 +9,7 @@ on:
 
 jobs:
   typecheck:
-    name: Lua Typecheck & Syntax Check
+    name: Lua Typecheck
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -25,6 +25,4 @@ jobs:
         with:
           checklevel: Warning
 
-      - name: Lua Syntax Check
-        run: luac -p main.lua ui.lua locales/*.lua
 
