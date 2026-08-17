@@ -23,7 +23,7 @@ This document tracks the current plan, architectural decisions, and tasks for th
 17. **Precision Transaction Verification**: Utilizes exact expected destination slot quantities and verifies that the cursor is empty before declaring a move transaction complete.
 18. **Lag Tolerance**: 5-second timeout thresholds for transaction verification and lock checks to handle synchronization lag during peak hours.
 19. **Localization Architecture**: Utilizes `AceLocale-3.0` embedded in `libs/AceLocale-3.0/` with base dictionary `locales/enUS.lua` (`isDefault = true`) and modular skeletons in `locales/` (`deDE`, `frFR`, `esES`, `esMX`, `ruRU`, `zhCN`, `zhTW`, `koKR`, `ptBR`, `itIT`).
-20. **CurseForge Packaging & CI/CD**: Uses `BigWigsMods/packager@v2` triggered on Git release tags (e.g. `v1.0.0`) via `.github/workflows/release.yml`. Dynamic version stamping is enabled with `## Version: @project-version@`, CurseForge project mapping via `## X-Curse-Project-ID: 1656218`, and packaging dependency management via `.pkgmeta`. Releases are gated behind a presubmit verification job (`setup_types.sh`, `lua-typecheck-action`, `luac -p`).
+20. **CurseForge Packaging & CI/CD**: Uses `BigWigsMods/packager@v2` triggered on Git release tags (e.g. `v1.0.0`) via `.github/workflows/release.yml`. Dynamic version stamping is enabled with `## Version: @project-version@`, CurseForge project mapping via `## X-Curse-Project-ID: 1656218`, and packaging dependency management via `.pkgmeta`. Releases use `manual-changelog` pointing to `CHANGELOG.md` for player-friendly release notes. Releases are gated behind a presubmit verification job (`setup_types.sh`, `lua-typecheck-action`, `luac -p`).
 
 ## Completed Tasks
 
