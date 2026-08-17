@@ -23,6 +23,7 @@ This document tracks the current plan, architectural decisions, and tasks for th
 17. **Precision Transaction Verification**: Utilizes exact expected destination slot quantities and verifies that the cursor is empty before declaring a move transaction complete.
 18. **Lag Tolerance**: 5-second timeout thresholds for transaction verification and lock checks to handle synchronization lag during peak hours.
 19. **Localization Architecture**: Utilizes `AceLocale-3.0` embedded in `libs/AceLocale-3.0/` with base dictionary `locales/enUS.lua` (`isDefault = true`) and modular skeletons in `locales/` (`deDE`, `frFR`, `esES`, `esMX`, `ruRU`, `zhCN`, `zhTW`, `koKR`, `ptBR`, `itIT`).
+20. **CurseForge Packaging & CI/CD**: Uses `BigWigsMods/packager@v2` triggered on Git release tags (e.g. `v1.0.0`) via `.github/workflows/release.yml`. Dynamic version stamping is enabled with `## Version: @project-version@`, CurseForge project mapping via `## X-Curse-Project-ID: 1656218`, and packaging dependency management via `.pkgmeta`. Releases are gated behind a presubmit verification job (`setup_types.sh`, `lua-typecheck-action`, `luac -p`).
 
 ## Completed Tasks
 
@@ -32,3 +33,15 @@ This document tracks the current plan, architectural decisions, and tasks for th
 *   Added confirmation dialog (`StaticPopup`) for resetting mappings.
 *   Updated CLI helper `scripts/dump_mappings.lua` to display ignored items and conflicts.
 *   Integrated `AceLocale-3.0` localization framework across all UI text, dialogs, tooltips, and notification messages.
+*   Configured automated CurseForge packaging pipeline with `.pkgmeta`, TOC metadata (`X-Curse-Project-ID: 1656218`), and gated release workflow (`.github/workflows/release.yml`).
+
+## Release Workflow Guide
+
+To publish a new version to CurseForge:
+1. Ensure all changes are committed on `main`.
+2. Create and push a semver Git tag:
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+3. The `.github/workflows/release.yml` workflow will automatically run presubmit verification (type checking and syntax validation) and, upon passing, package and deploy the release directly to CurseForge.

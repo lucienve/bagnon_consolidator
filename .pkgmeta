@@ -1,0 +1,25 @@
+package-as: Bagnon_Consolidator
+
+enable-toc-creation: yes
+
+externals:
+  libs/AceLocale-3.0: https://repos.curseforge.com/wow/ace3/trunk/AceLocale-3.0
+
+ignore:
+  - .agents
+  - .github
+  - .gitignore
+  - .gitmodules
+  - .luarc.json
+  - .markdownlint.json
+  - .prettierrc
+  - .types
+  - doc
+  - scripts
+  - types.lua
+  - libs/libItemMove/.git
+  - libs/libItemMove/.gitignore
+  - libs/libItemMove/.luarc.json
+  - libs/libItemMove/docs
+  - libs/libItemMove/scripts
+  - libs/libItemMove/tests

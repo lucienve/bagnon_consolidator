@@ -5,13 +5,17 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_call:
 
 jobs:
   typecheck:
+    name: Lua Typecheck & Syntax Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          submodules: recursive
 
       - name: Setup types
         run: bash scripts/setup_types.sh
@@ -20,3 +24,7 @@ jobs:
         uses: mrcjkb/lua-typecheck-action@v1.1.0
         with:
           checklevel: Warning
+
+      - name: Lua Syntax Check
+        run: luac -p main.lua ui.lua locales/*.lua
+

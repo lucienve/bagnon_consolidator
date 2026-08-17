@@ -2,8 +2,7 @@
 	<!-- Embed LibItemMove-1.0 library -->
 	<Include file="libs/libItemMove/libItemMove.xml"/>
 
-	<!-- Embed AceLocale-3.0 library -->
-	<!-- TODO: Migrate external libraries (like AceLocale-3.0) to .pkgmeta & BigWigsMods/packager GitHub Action for release builds rather than tracking vendored copies in git. -->
+	<!-- Embed AceLocale-3.0 library (packaged via .pkgmeta externals) -->
 	<Include file="libs/AceLocale-3.0/AceLocale-3.0.xml"/>
 
 	<!-- Localization Dictionaries -->
