@@ -17,7 +17,10 @@ loaderFrame:SetScript("OnEvent", function(self, event, name)
 	if name == "Bagnon_Consolidator" then
 		BagnonConsolidatorDB = BagnonConsolidatorDB or {}
 		BagnonConsolidatorDB.guildTabs = BagnonConsolidatorDB.guildTabs or {}
+		BagnonConsolidatorDB.tabNames = BagnonConsolidatorDB.tabNames or {}
 		BagnonConsolidatorDB.personalBanks = BagnonConsolidatorDB.personalBanks or {}
+		BagnonConsolidatorDB.ignored = BagnonConsolidatorDB.ignored or {}
+		BagnonConsolidatorDB.conflicts = BagnonConsolidatorDB.conflicts or {}
 		if BagnonConsolidatorDB.enableDebug == nil then
 			BagnonConsolidatorDB.enableDebug = false
 		end
@@ -43,7 +46,7 @@ local function IsItemInAnyPersonalBank(itemID)
 	if not BagnonConsolidatorDB or not BagnonConsolidatorDB.personalBanks then
 		return false
 	end
-	for charKey, items in pairs(BagnonConsolidatorDB.personalBanks) do
+	for _, items in pairs(BagnonConsolidatorDB.personalBanks) do
 		if items[itemID] then
 			return true
 		end
@@ -73,6 +76,237 @@ local function Debug(msg)
 	end
 end
 
+-- Export helpers
+Addon.GetCharacterKey = GetCharacterKey
+Addon.GetGuildKey = GetGuildKey
+Addon.GetItemName = GetItemName
+Addon.Print = Print
+Addon.Debug = Debug
+
+-- Static Popup Registration
+StaticPopupDialogs["BAGNON_CONSOLIDATOR_RESET_CONFIRM"] = {
+	text = "Are you sure you want to reset all stored mappings for %s?",
+	button1 = "Yes",
+	button2 = "No",
+	OnAccept = function(self, data)
+		if Addon.ResetMappings then
+			Addon.ResetMappings(data)
+		end
+	end,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = 3,
+}
+
+local function ResetMappings(scope)
+	if not BagnonConsolidatorDB then return end
+
+	if scope == "guild" then
+		local guildKey = GetGuildKey()
+		if guildKey then
+			BagnonConsolidatorDB.guildTabs[guildKey] = {}
+			if BagnonConsolidatorDB.conflicts then
+				BagnonConsolidatorDB.conflicts[guildKey] = {}
+			end
+			Print("Reset all guild bank mappings for " .. guildKey)
+		else
+			Print("You are not currently in a guild.")
+		end
+	elseif scope == "personal" then
+		local charKey = GetCharacterKey()
+		if charKey then
+			BagnonConsolidatorDB.personalBanks[charKey] = {}
+			if BagnonConsolidatorDB.conflicts then
+				BagnonConsolidatorDB.conflicts[charKey] = {}
+			end
+			Print("Reset all personal bank mappings for " .. charKey)
+		end
+	elseif scope == "all" then
+		BagnonConsolidatorDB.guildTabs = {}
+		BagnonConsolidatorDB.personalBanks = {}
+		BagnonConsolidatorDB.ignored = {}
+		BagnonConsolidatorDB.conflicts = {}
+		Print("Reset all Bagnon Consolidator mappings and ignore lists.")
+	end
+
+	if Addon.Viewer and Addon.Viewer.Refresh then
+		Addon.Viewer:Refresh()
+	end
+end
+
+local function TakeSnapshot(targetFrame)
+	if not BagnonConsolidatorDB then return false end
+
+	local frame = targetFrame
+	if not frame then
+		if Addon.Frames:IsShown('guild') then
+			frame = Addon.Frames:Get('guild')
+		elseif Addon.Frames:IsShown('bank') then
+			frame = Addon.Frames:Get('bank')
+		end
+	end
+
+	if not frame then
+		Print("Bank or Guild Bank must be open to take a snapshot.")
+		return false
+	end
+
+	local isGuild = (frame.id == 'guild')
+
+	if isGuild then
+		local guildKey = GetGuildKey()
+		if not guildKey then
+			Print("You are not currently in a guild.")
+			return false
+		end
+
+		BagnonConsolidatorDB.guildTabs[guildKey] = BagnonConsolidatorDB.guildTabs[guildKey] or {}
+		BagnonConsolidatorDB.tabNames = BagnonConsolidatorDB.tabNames or {}
+		BagnonConsolidatorDB.tabNames[guildKey] = BagnonConsolidatorDB.tabNames[guildKey] or {}
+		BagnonConsolidatorDB.conflicts[guildKey] = BagnonConsolidatorDB.conflicts[guildKey] or {}
+
+		local observedTabs = {}
+		local itemCache = {}
+
+		for tab = 1, MAX_GUILDBANK_TABS do
+			local tName = GetGuildBankTabInfo and GetGuildBankTabInfo(tab)
+			if tName and tName ~= "" then
+				BagnonConsolidatorDB.tabNames[guildKey][tab] = tName
+			end
+			local bagInfo = frame:GetBagInfo(tab)
+			local items = bagInfo and bagInfo.items
+			if items then
+				for slot in pairs(items) do
+					local item = frame:Super(Addon.Guild):GetItemInfo(tab, slot)
+					if item and item ~= Addon.None and item.itemID then
+						local id = item.itemID
+						observedTabs[id] = observedTabs[id] or {}
+						observedTabs[id][tab] = true
+						if not itemCache[id] then
+							itemCache[id] = item
+						end
+					end
+				end
+			end
+		end
+
+		local mappedCount = 0
+		local conflictCount = 0
+		local skippedIgnoredCount = 0
+
+		for id, tabs in pairs(observedTabs) do
+			local item = itemCache[id]
+			local itemName = item and GetItemName(item) or ("Item " .. id)
+
+			if BagnonConsolidatorDB.ignored and BagnonConsolidatorDB.ignored[id] then
+				skippedIgnoredCount = skippedIgnoredCount + 1
+				Debug("Snapshot: Skipped ignored item " .. itemName .. " (" .. id .. ")")
+			elseif IsItemInAnyPersonalBank(id) then
+				local tabList = {}
+				for t in pairs(tabs) do tinsert(tabList, t) end
+				BagnonConsolidatorDB.conflicts[guildKey][id] = {
+					name = itemName,
+					personal = true,
+					tabs = tabList,
+					reason = "Present in both Personal Bank and Guild Bank"
+				}
+				BagnonConsolidatorDB.guildTabs[guildKey][id] = nil
+				conflictCount = conflictCount + 1
+				Debug("Snapshot: Conflict for " .. itemName .. " (in personal & guild bank)")
+			else
+				local tabCount = 0
+				local targetTab
+				local tabList = {}
+				for t in pairs(tabs) do
+					tabCount = tabCount + 1
+					targetTab = t
+					tinsert(tabList, t)
+				end
+
+				if tabCount > 1 then
+					BagnonConsolidatorDB.conflicts[guildKey][id] = {
+						name = itemName,
+						personal = false,
+						tabs = tabList,
+						reason = "Present on multiple Guild Bank tabs"
+					}
+					BagnonConsolidatorDB.guildTabs[guildKey][id] = nil
+					conflictCount = conflictCount + 1
+					Debug("Snapshot: Multi-tab conflict for " .. itemName)
+				elseif tabCount == 1 and targetTab then
+					BagnonConsolidatorDB.conflicts[guildKey][id] = nil
+					local tabName = GetGuildBankTabInfo(targetTab)
+					BagnonConsolidatorDB.guildTabs[guildKey][id] = {
+						tab = targetTab,
+						name = itemName,
+						tabName = tabName
+					}
+					mappedCount = mappedCount + 1
+				end
+			end
+		end
+
+		Print(string.format("Snapshot complete for Guild Bank: %s (%d items mapped, %d conflicts, %d ignored).", guildKey, mappedCount, conflictCount, skippedIgnoredCount))
+	else
+		local charKey = GetCharacterKey()
+		if not charKey then
+			Print("Unable to determine character name and realm.")
+			return false
+		end
+
+		BagnonConsolidatorDB.personalBanks[charKey] = BagnonConsolidatorDB.personalBanks[charKey] or {}
+		BagnonConsolidatorDB.conflicts[charKey] = BagnonConsolidatorDB.conflicts[charKey] or {}
+
+		local mappedCount = 0
+		local skippedIgnoredCount = 0
+
+		if Addon.BankBags then
+			for _, bag in ipairs(Addon.BankBags) do
+				for slot = 1, frame:NumSlots(bag) do
+					local item = frame:GetItemInfo(bag, slot)
+					if item and item ~= Addon.None and item.itemID then
+						local id = item.itemID
+						local itemName = GetItemName(item)
+
+						if BagnonConsolidatorDB.ignored and BagnonConsolidatorDB.ignored[id] then
+							skippedIgnoredCount = skippedIgnoredCount + 1
+						else
+							BagnonConsolidatorDB.personalBanks[charKey][id] = itemName
+							mappedCount = mappedCount + 1
+
+							if BagnonConsolidatorDB.guildTabs then
+								for gKey, gItems in pairs(BagnonConsolidatorDB.guildTabs) do
+									if gItems[id] then
+										gItems[id] = nil
+										BagnonConsolidatorDB.conflicts[gKey] = BagnonConsolidatorDB.conflicts[gKey] or {}
+										BagnonConsolidatorDB.conflicts[gKey][id] = {
+											name = itemName,
+											personal = true,
+											reason = "Present in personal bank of " .. charKey
+										}
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+
+		Print(string.format("Snapshot complete for Personal Bank: %s (%d items mapped, %d ignored).", charKey, mappedCount, skippedIgnoredCount))
+	end
+
+	if Addon.Viewer and Addon.Viewer.Refresh then
+		Addon.Viewer:Refresh()
+	end
+
+	return true
+end
+
+Addon.TakeSnapshot = TakeSnapshot
+Addon.ResetMappings = ResetMappings
+
 local ConsolidateButton = Addon.Tipped:NewClass('ConsolidateButton', 'Button', 'BagnonButtonTemplate')
 
 function ConsolidateButton:New(parent)
@@ -86,7 +320,7 @@ function ConsolidateButton:OnEnter()
 	self:ShowTooltip(
 		"Consolidate to Bank",
 		"|cffbbbbbbFinds duplicate items in your bags and moves them to the open bank, consolidating stacks to save space.|r",
-		"|R Options"
+		"|R Options / Mappings"
 	)
 end
 
@@ -96,9 +330,34 @@ function ConsolidateButton:OnClick(button)
 			menu:SetTag("BagnonConsolidatorOptions")
 			menu:CreateTitle("Bagnon Consolidator")
 
+			menu:CreateButton("Open Mappings Viewer...", function()
+				if Addon.Viewer and Addon.Viewer.Toggle then
+					Addon.Viewer:Toggle()
+				end
+			end)
+
+			menu:CreateButton("Take Snapshot", function()
+				TakeSnapshot()
+			end)
+
+			menu:CreateButton("Reset Mappings...", function()
+				local scope = "all"
+				local label = "everything"
+				if Addon.Frames:IsShown('guild') then
+					scope = "guild"
+					label = GetGuildKey() or "Guild Bank"
+				elseif Addon.Frames:IsShown('bank') then
+					scope = "personal"
+					label = GetCharacterKey() or "Personal Bank"
+				end
+				StaticPopup_Show("BAGNON_CONSOLIDATOR_RESET_CONFIRM", label, nil, scope)
+			end)
+
+			menu:CreateDivider()
+
 			menu:CreateCheckbox("Enable Debug Logs",
 				function() return BagnonConsolidatorDB and BagnonConsolidatorDB.enableDebug or false end,
-				function(_, _, menu)
+				function()
 					BagnonConsolidatorDB.enableDebug = not BagnonConsolidatorDB.enableDebug
 					LibItemMove.Debug = BagnonConsolidatorDB.enableDebug
 				end)
@@ -155,91 +414,14 @@ function Engine:Start(frame)
 	end
 
 	local isGuild = frame.id == 'guild'
-	local itemTabs = {}
-	local duplicateItems = {}
-	local warnedPersonalItems = {}
-
-	-- 1. Scan Bank container to find items and active tabs
-	if isGuild then
-		local itemCache = {}
-		for tab = 1, MAX_GUILDBANK_TABS do
-			local bagInfo = frame:GetBagInfo(tab)
-			local items = bagInfo and bagInfo.items
-			if items then
-				for slot in pairs(items) do
-					local item = frame:Super(Addon.Guild):GetItemInfo(tab, slot)
-					if item and item ~= Addon.None and item.itemID then
-						local id = item.itemID
-						itemTabs[id] = itemTabs[id] or {}
-						itemTabs[id][tab] = true
-						if not itemCache[id] then
-							itemCache[id] = item
-						end
-					end
-				end
-			end
-		end
-
-		local guildKey = GetGuildKey()
-		if guildKey then
-			BagnonConsolidatorDB.guildTabs[guildKey] = BagnonConsolidatorDB.guildTabs[guildKey] or {}
-			for id, tabs in pairs(itemTabs) do
-				local tabCount = 0
-				local targetTab
-				for tab in pairs(tabs) do
-					tabCount = tabCount + 1
-					targetTab = tab
-				end
-				if tabCount == 1 then
-					if IsItemInAnyPersonalBank(id) then
-						BagnonConsolidatorDB.guildTabs[guildKey][id] = nil
-						Debug("Skipped adding item ID " .. id .. " to guildTabs because it exists in personal bank.")
-					else
-						local item = itemCache[id]
-						local itemName = item and GetItemName(item) or "Unknown Item"
-						local tabName = GetGuildBankTabInfo(targetTab)
-						BagnonConsolidatorDB.guildTabs[guildKey][id] = {
-							tab = targetTab,
-							name = itemName,
-							tabName = tabName
-						}
-					end
-				elseif tabCount > 1 then
-					BagnonConsolidatorDB.guildTabs[guildKey][id] = nil
-				end
-			end
-		end
-	else
-		local charKey = GetCharacterKey()
-		if charKey then
-			BagnonConsolidatorDB.personalBanks[charKey] = BagnonConsolidatorDB.personalBanks[charKey] or {}
-		end
-
-		if Addon.BankBags then
-			for _, bag in ipairs(Addon.BankBags) do
-				for slot = 1, frame:NumSlots(bag) do
-					local item = frame:GetItemInfo(bag, slot)
-					if item and item ~= Addon.None and item.itemID then
-						duplicateItems[item.itemID] = true
-						if charKey then
-							BagnonConsolidatorDB.personalBanks[charKey][item.itemID] = GetItemName(item)
-						end
-						if BagnonConsolidatorDB.guildTabs then
-							for gKey, items in pairs(BagnonConsolidatorDB.guildTabs) do
-								if items[item.itemID] then
-									items[item.itemID] = nil
-									Debug("Removed guild bank location for item ID " .. item.itemID .. " on " .. gKey)
-								end
-							end
-						end
-					end
-				end
-			end
-		end
-	end
-
-	-- 2. Scan Backpack to find matching duplicate items
 	local backpackMatches = {}
+	local warnedIgnored = {}
+	local warnedConflicts = {}
+
+	local guildKey = isGuild and GetGuildKey() or nil
+	local charKey = (not isGuild) and GetCharacterKey() or nil
+
+	-- Scan Backpack to find matching items
 	if Addon.InventoryBags then
 		for _, bag in ipairs(Addon.InventoryBags) do
 			if bag ~= KEYRING_CONTAINER then
@@ -247,53 +429,44 @@ function Engine:Start(frame)
 					local item = Addon.Inventory:GetItemInfo(bag, slot)
 					if item and item ~= Addon.None and item.itemID then
 						local id = item.itemID --[[@as number]]
-						local match = false
 
-						if isGuild then
-							if IsItemInAnyPersonalBank(id) then
-								if not warnedPersonalItems[id] then
-									warnedPersonalItems[id] = true
+						if BagnonConsolidatorDB.ignored and BagnonConsolidatorDB.ignored[id] then
+							if not warnedIgnored[id] then
+								warnedIgnored[id] = true
+								Debug("Skipping ignored item: " .. (item.hyperlink or tostring(id)))
+							end
+						elseif isGuild then
+							if BagnonConsolidatorDB.conflicts and BagnonConsolidatorDB.conflicts[guildKey] and BagnonConsolidatorDB.conflicts[guildKey][id] then
+								if not warnedConflicts[id] then
+									warnedConflicts[id] = true
 									local link = item.hyperlink or ("item:" .. id)
-									Print(link .. " has been designated as a personal bank item. Skipped guild bank consolidation.")
+									local reason = BagnonConsolidatorDB.conflicts[guildKey][id].reason or "Item has conflicting destinations."
+									Print(link .. ": " .. reason .. " (Skipped).")
 								end
-							elseif itemTabs[id] then
-								local tabCount = 0
-								local targetTab
-								for tab in pairs(itemTabs[id]) do
-									tabCount = tabCount + 1
-									targetTab = tab
-								end
- 
-								if tabCount > 1 then
-									local link = item.hyperlink or ("item:" .. id)
-									Print(link .. " is present in multiple guild bank tabs. Skipped.")
-									itemTabs[id] = nil
-								elseif tabCount == 1 then
-									match = true
-									backpackMatches[id] = targetTab
-								end
-							elseif not backpackMatches[id] then
-								local guildKey = GetGuildKey()
+							else
 								local entry = guildKey and BagnonConsolidatorDB.guildTabs[guildKey] and BagnonConsolidatorDB.guildTabs[guildKey][id]
 								local targetTab = entry and entry.tab
 								if targetTab then
 									local _, _, _, canDeposit = GetGuildBankTabInfo(targetTab)
 									if canDeposit then
-										itemTabs[id] = { [targetTab] = true }
-										match = true
 										backpackMatches[id] = targetTab
-										Debug("Remembered tab " .. tostring(targetTab) .. " for item ID " .. tostring(id))
 									else
-										Debug("Remembered tab " .. tostring(targetTab) .. " for item ID " .. tostring(id) .. " but player lacks deposit permission.")
+										Debug("Item ID " .. id .. " mapped to tab " .. targetTab .. " but lacks deposit permission.")
 									end
 								end
 							end
 						else
-							local charKey = GetCharacterKey()
-							local remembered = charKey and BagnonConsolidatorDB.personalBanks[charKey] and BagnonConsolidatorDB.personalBanks[charKey][id]
-							if duplicateItems[id] or remembered then
-								match = true
-								backpackMatches[id] = true
+							if BagnonConsolidatorDB.conflicts and BagnonConsolidatorDB.conflicts[charKey] and BagnonConsolidatorDB.conflicts[charKey][id] then
+								if not warnedConflicts[id] then
+									warnedConflicts[id] = true
+									local link = item.hyperlink or ("item:" .. id)
+									Print(link .. " has conflicting destinations (Skipped).")
+								end
+							else
+								local mapped = charKey and BagnonConsolidatorDB.personalBanks[charKey] and BagnonConsolidatorDB.personalBanks[charKey][id]
+								if mapped then
+									backpackMatches[id] = true
+								end
 							end
 						end
 					end
@@ -302,7 +475,7 @@ function Engine:Start(frame)
 		end
 	end
 
-	-- 3. Build moveQueue and multiTabQueue
+	-- Build moveQueue and multiTabQueue
 	local totalToMove = 0
 	local multiTabQueue = {}
 	local moveQueue = {}
@@ -345,7 +518,7 @@ function Engine:Start(frame)
 		end
 	end
 
-	-- 4. Dispatch to LibItemMove
+	-- Dispatch to LibItemMove
 	if totalToMove > 0 then
 		isConsolidating = true
 		local context = isGuild and "BagToGuildBank" or "BagToBank"
@@ -362,12 +535,12 @@ function Engine:Start(frame)
 				Print("Consolidation complete.")
 			elseif event == "TIMEOUT_ERROR" or event == "CURSOR_LOCKED_ERROR" or event == "PERMISSION_ERROR" then
 				isConsolidating = false
-				PlaySound(847) -- Error sound
+				PlaySound(847)
 				Print("Consolidation stopped: " .. tostring(event))
 			end
 		end)
 	else
-		PlaySound(847) -- Error sound
+		PlaySound(847)
 		Print("No items need consolidation.")
 	end
 end

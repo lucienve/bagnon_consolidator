@@ -17,9 +17,18 @@ KEYRING_CONTAINER = -2
 ---@field name string
 ---@field tabName string|nil
 
+---@class BagnonConsolidatorConflictEntry
+---@field name string
+---@field tabs number[]|nil
+---@field personal boolean|nil
+---@field reason string|nil
+
 ---@class BagnonConsolidatorDB
 ---@field guildTabs table<string, table<number, BagnonConsolidatorDBEntry>>
+---@field tabNames table<string, table<number, string>>|nil
 ---@field personalBanks table<string, table<number, string>>
+---@field ignored table<number, string>
+---@field conflicts table<string, table<number, BagnonConsolidatorConflictEntry>>
 ---@field enableDebug boolean|nil
 BagnonConsolidatorDB = {}
 
@@ -30,6 +39,14 @@ GetGuildBankTabInfo = nil
 GetContainerItemInfo = nil
 ---@type fun(bag: number, slot: number)
 PickupContainerItem = nil
+
+---@type table<string, any>
+StaticPopupDialogs = {}
+---@type fun(which: string, text_arg1?: string, text_arg2?: string, data?: any): any
+StaticPopup_Show = nil
+
+---@type any
+MenuUtil = nil
 
 -- Declare LibStub and libraries
 ---@class LibStub
@@ -65,6 +82,9 @@ function C_Everywhere.GetItemInfo(item) end
 ---@field Guild BagnonFrame
 ---@field ConsolidateButton ConsolidateButton
 ---@field ConsolidateEngine ConsolidateEngine
+---@field Viewer any
+---@field TakeSnapshot fun(frame?: any)
+---@field ResetMappings fun(scope?: string)
 _G["Bagnon"] = {} --[[@as BagnonAddon]]
 
 ---@class BagnonTipped

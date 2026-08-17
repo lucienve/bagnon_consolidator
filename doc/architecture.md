@@ -8,17 +8,18 @@ This document describes the design, goals, and architectural structure of the `B
 
 The primary goal of `Bagnon_Consolidator` is to provide a single-button mechanism inside Bagnon's backpack frame to consolidate items from the backpack into the open bank (personal or guild bank) with the following rules:
 
-1.  **Duplicate Detection**: Only move items from the backpack if at least one stack of that item already exists in the bank (personal) or on a single tab (guild).
+1.  **Duplicate Detection & Physical Ingestion**: Mappings are established by physical layout in the personal bank or guild bank tabs via additive snapshots.
 2.  **Stack Consolidation (Compression)**: Combine partial stacks to minimize total container slots used, maximizing the number of full stacks.
 3.  **Guild Bank Tab Matching**: Automatically switch to the correct tab where the item was originally found and deposit it there.
-4.  **Multi-Tab Safeguard (Guild Bank)**: If an item is found in more than one guild bank tab, **do not move it**. Print a warning to the player's chat frame. This prevents messing up manual tab organization.
-5.  **Personal Bank Bag Exemption**: Personal bank bags are consolidated in Bagnon's UI anyway, so it is fine for duplicates to exist in different bags; they will be merged normally.
+4.  **Multi-Tab Safeguard (Guild Bank) & Exclusivity**: If an item is found in more than one guild bank tab, or in both personal bank and guild bank, it is mapped to **Conflicts (Go Nowhere)** and skipped.
+5.  **Ignore List Protection**: Items marked on the Ignore list are never consolidated and are skipped during snapshot ingestion.
+6.  **Zero-Stock Retention**: Additive snapshots preserve mappings for out-of-stock items until explicitly removed or reset.
 
 ---
 
 ## 2. File Layout & Loading Manifests
 
-To conform with BagBrother's manifest load order guidelines, the addon avoids loading Lua scripts directly in the `.toc` file:
+To conform with BagBrother's manifest load order guidelines, the addon loads scripts via `main.xml`:
 
 ```text
 bagnon_consolidator/
@@ -29,8 +30,13 @@ bagnon_consolidator/
 ├── Bagnon_Consolidator.toc  # Set dependencies (Bagnon), Author (LVE), loads main.xml
 ├── LICENSE                  # Software license file
 ├── README.md                # User guide, installation guidelines, and features
-├── main.xml                 # XML manifest loading Lua scripts via <Script> tag
-├── main.lua                 # Core logic, class definitions, and event engine
+├── main.xml                 # XML manifest loading scripts in order
+├── main.lua                 # Core logic, class definitions, and snapshot engine
+├── ui.lua                   # Mappings viewer frame, search filter, and options UI
+├── types.lua                # EmmyLua type definitions and Blizzard stubs
+├── scripts/
+│   ├── dump_mappings.lua   # CLI helper to inspect SavedVariables database
+│   └── setup_types.sh       # Type environment setup helper
 └── doc/
     ├── project_context.md   # Project tasks, plans, and current state
     └── architecture.md      # Addon design and developer instructions (this file)
@@ -51,56 +57,62 @@ function Addon.Inventory:GetExtraButtons()
 end
 ```
 
-*   `self:GetWidget('ConsolidateButton')` automatically looks up the global namespace `Addon.ConsolidateButton` (which we register using `Addon.Tipped:NewClass`), instantiates the button using the XML template `BagnonButtonTemplate`, and caches it on the frame.
-*   The button displays a custom plus-sign icon (`Interface/Icons/Spell_ChargePositive`) and triggers the engine upon `OnClick()`.
+*   `self:GetWidget('ConsolidateButton')` automatically looks up the global namespace `Addon.ConsolidateButton`, instantiates the button, and caches it on the frame.
+*   **Left-Click**: Starts consolidation to the open bank or guild bank.
+*   **Right-Click**: Opens a `MenuUtil` context menu featuring:
+    *   *Open Mappings Viewer...* (toggles `Addon.Viewer`)
+    *   *Take Snapshot* (triggers additive container scan)
+    *   *Reset Mappings...* (prompts confirmation to clear active container mappings)
+    *   *Enable Debug Logs* (toggle)
 
 ---
 
-## 4. Offline Database Scanning
+## 4. Additive Ingestion & Snapshot Engine
 
-The WoW API only permits querying and moving items on the *active* guild bank tab (`GetCurrentGuildBankTab()`). To determine which tab an item is in (and check if it exists in multiple tabs) without triggering multiple tab switches, the addon queries the **offline database cache** managed by BagBrother:
+The snapshot engine (`Addon.TakeSnapshot`) operates with additive rules:
 
-*   `frame:GetBagInfo(tab)`: Accesses the cached data of the guild tab.
-*   `bagInfo.items`: Contains a dictionary of slot indexes to item data strings.
-*   **Item Parsing**: Standard cached items are stored as `itemID:enchantID:...;stackCount`. The addon parses this string using:
-    ```lua
-    local values = strsplit(';', data)
-    local id = tonumber(values:match('^(%d+)'))
-    ```
-    This avoids calling slow WoW APIs and computes tab locations in a single frame.
-
----
-
-## 5. Generalized Multi-Stack Consolidation Algorithm
-
-To compress any combination of partial stacks in the Backpack ($S_S$) and Bank ($S_D$), the algorithm performs the following simulation:
-
-1.  **Ascending Sort**: Sort both $S_S$ and $S_D$ in ascending order of stack size (e.g. 2, 5, 10, 15).
-2.  **Pre-Consolidate Bank**: Merge the smallest partial stacks in the bank into the largest partial stacks until there is at most **one** partial stack of that item left in the bank. This frees up maximum empty bank slots.
-3.  **Pre-Consolidate Backpack**: Do the same for the backpack.
-4.  **Cross-Container Merge**: Merge the remaining partial stack in the backpack into the bank's partial stack.
-5.  **Remaining Stack Deposit**: Move any remaining full or partial stacks in the backpack to empty bank slots.
-
-*Note: All operations are simulated locally to generate the sequence of required moves before the queue is started.*
+*   **Offline Database Scanning**: Scans guild bank tabs using BagBrother's offline cache (`frame:GetBagInfo(tab)`), reading all tabs instantaneously.
+*   **Ignore Filtering**: Any `itemID` in `BagnonConsolidatorDB.ignored` is skipped during snapshots.
+*   **Conflict Detection**:
+    *   Item on $>1$ guild tab $\rightarrow$ mapped to `conflicts[guildKey]` with reason.
+    *   Item in personal bank AND guild bank $\rightarrow$ mapped to `conflicts` and stripped from active destinations.
+*   **Relocation Detection**: If an item moved completely from Tab $A \rightarrow$ Tab $B$, its mapping updates cleanly.
+*   **Zero-Stock Retention**: Items previously mapped but currently at 0 count are retained in the database.
 
 ---
 
-## 6. Asynchronous Event-Driven Queue Runner
+## 5. Viewer Frame & Auditing (`ui.lua`)
 
-Because item moves in WoW are throttled and make slots temporarily locked, the engine processes tasks sequentially:
+The standalone Viewer Frame (`BagnonConsolidatorViewer`) provides full auditing and pruning:
 
-*   **Move Task**: Swaps or merges items using `PickupItem(from)` and `PickupItem(to)`.
-*   **Tab Switch Task**: Calls `SetCurrentGuildBankTab(tab)`.
-*   **Synchronization Handler**: After executing a task, the queue yields and waits for event notification before calling `ProcessNext()`:
-    *   `BAG_UPDATE_DELAYED` (Personal Bank)
-    *   `GUILDBANKBAGSLOTS_CHANGED` (Guild Bank)
-*   **Timeout Safety**: To prevent UI lockup if a packet is lost or a move fails silently, `Queue:WaitForEvent` uses `C_Timer.After(1.5, trigger)` to automatically resume queue processing after a 1.5-second timeout.
+*   **Destination Tabs**: `Personal Bank`, `Guild Tabs 1–8` (dynamically labeled), `Conflicts`, and `Ignored`.
+*   **Live Search**: Real-time filtering by item name or ID.
+*   **Per-Item `[✕]` Actions**:
+    *   Active Tab: Moves item to `Ignored` (prevents consolidation and re-learning).
+    *   Ignored Tab: Clears item from `Ignored` (allows re-learning on future snapshots).
+    *   Conflicts Tab: Clears the conflict entry.
+*   **Header Controls**: `Take Snapshot` and `Reset Mappings...` (with `StaticPopup` dialog).
+
+---
+
+## 6. Generalized Multi-Stack Consolidation Algorithm
+
+To compress partial stacks in the Backpack ($S_S$) and Bank ($S_D$), `LibItemMove-1.0` executes:
+
+1.  **Ascending Sort**: Sort partial stacks in ascending order of size.
+2.  **Pre-Consolidate Destination**: Merge smallest partial stacks into largest partial stacks in the bank to maximize empty slots.
+3.  **Pre-Consolidate Source**: Merge smallest partial stacks in backpack.
+4.  **Cross-Container Merge**: Merge remaining partial backpack stack into bank partial stack.
+5.  **Remaining Stack Deposit**: Deposit remaining full/partial stacks to empty bank slots.
 
 ---
 
 ## 7. Database Memory & Saved Mappings
 
-To enable consolidation of items when they are not currently present in the target container, the addon persists mapping data inside `BagnonConsolidatorDB`:
+Persisted inside `BagnonConsolidatorDB`:
 
-*   **Guild Bank Tab Memories (`guildTabs`)**: Maps `guildKey` (computed as `GuildName-GuildRealm`) to a lookup table of `itemID` -> `{ tab, name, tabName }`. Items are added when they are observed on a single guild bank tab and removed if they are seen on multiple tabs (to preserve player categorization).
-*   **Personal Bank Memories (`personalBanks`)**: Maps `characterKey` (computed as `CharacterName-RealmName`) to a lookup table of `itemID` -> `true`. Items are recorded here when they are observed in a character's personal bank bags during a consolidation scan, and are used to authorize consolidation of that item even if the personal bank has 0 copies left of it.
+*   **`guildTabs`**: Maps `guildKey` (`GuildName-GuildRealm`) $\rightarrow$ `itemID` $\rightarrow$ `{ tab, name, tabName }`.
+*   **`personalBanks`**: Maps `charKey` (`CharacterName-RealmName`) $\rightarrow$ `itemID` $\rightarrow$ `itemName`.
+*   **`ignored`**: Set of `itemID` $\rightarrow$ `itemName` blacklisted from consolidation and snapshots.
+*   **`conflicts`**: Maps `key` $\rightarrow$ `itemID` $\rightarrow$ `{ name, personal, tabs, reason }`.
+*   **`enableDebug`**: Boolean flag for verbose debugging logs.

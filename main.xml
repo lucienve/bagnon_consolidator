@@ -4,4 +4,7 @@
 
 	<!-- Bagnon Consolidator main script -->
 	<Script file="main.lua"/>
+
+	<!-- Bagnon Consolidator viewer & options UI -->
+	<Script file="ui.lua"/>
 </Ui>

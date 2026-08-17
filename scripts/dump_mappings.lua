@@ -98,4 +98,52 @@ end
 
 if not hasPersonal then
 	print("No personal bank mappings found.")
+	print("")
+end
+
+local hasIgnored = false
+if BagnonConsolidatorDB.ignored then
+	local sorted = {}
+	for itemID, name in pairs(BagnonConsolidatorDB.ignored) do
+		hasIgnored = true
+		table.insert(sorted, { id = itemID, name = name or "Unknown Item" })
+	end
+	if hasIgnored then
+		print("Ignored Items (Never Consolidated)")
+		print(string.rep("-", 34))
+		table.sort(sorted, function(a, b) return a.name < b.name end)
+		for _, entry in ipairs(sorted) do
+			print(string.format("  - [%d] %s", entry.id, entry.name))
+		end
+		print("")
+	end
+end
+
+if not hasIgnored then
+	print("No ignored items found.")
+	print("")
+end
+
+local hasConflicts = false
+if BagnonConsolidatorDB.conflicts then
+	for scopeKey, items in pairs(BagnonConsolidatorDB.conflicts) do
+		local sorted = {}
+		for itemID, conf in pairs(items) do
+			hasConflicts = true
+			table.insert(sorted, { id = itemID, name = conf.name or "Unknown Item", reason = conf.reason or "Multiple destinations" })
+		end
+		if #sorted > 0 then
+			print("Conflicts (" .. scopeKey .. ")")
+			print(string.rep("-", #scopeKey + 14))
+			table.sort(sorted, function(a, b) return a.name < b.name end)
+			for _, entry in ipairs(sorted) do
+				print(string.format("  - [%d] %s (%s)", entry.id, entry.name, entry.reason))
+			end
+			print("")
+		end
+	end
+end
+
+if not hasConflicts then
+	print("No conflicts found.")
 end
