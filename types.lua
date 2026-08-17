@@ -89,8 +89,13 @@ function C_Everywhere.GetItemInfo(item) end
 ---@return string|number itemIcon
 function C_Everywhere.GetItemIcon(item) end
 
+---@class AceLocale30
+---@field NewLocale fun(self: AceLocale30, application: string, locale: string, isDefault?: boolean, silent?: boolean): table<string, any>|nil
+---@field GetLocale fun(self: AceLocale30, application: string, silent?: boolean): table<string, string>
+
 -- Addon private table and module definitions
 ---@class BagnonAddon
+---@field L table<string, string>
 ---@field Tipped BagnonTipped
 ---@field Frames BagnonFrames
 ---@field Inventory BagnonInventory

@@ -7,6 +7,7 @@
 ---@type string, BagnonAddon
 local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local C = LibStub('C_Everywhere')
+local L = Addon.L or LibStub('AceLocale-3.0'):GetLocale('Bagnon_Consolidator')
 
 local Viewer = {}
 Addon.Viewer = Viewer
@@ -52,11 +53,11 @@ end
 
 local function GetTabDisplayName(tabIdx)
 	local customName = GetCustomTabName(tabIdx)
-	local defaultName = "Tab " .. tabIdx
+	local defaultName = string.format(L["Tab %d"], tabIdx)
 	if customName and customName ~= "" and customName:lower() ~= defaultName:lower() then
-		return string.format("Tab %d: %s", tabIdx, customName)
+		return string.format(L["Tab %d: %s"], tabIdx, customName)
 	end
-	return string.format("Tab %d:", tabIdx)
+	return string.format(L["Tab %d:"], tabIdx)
 end
 
 local function GetItemsForCurrentView()
@@ -83,7 +84,7 @@ local function GetItemsForCurrentView()
 						id = itemID,
 						name = itemName,
 						category = "personal",
-						destName = "Personal Bank",
+						destName = L["Personal Bank"],
 						count = 0,
 					})
 				end
@@ -93,7 +94,7 @@ local function GetItemsForCurrentView()
 		if guildKey and BagnonConsolidatorDB.guildTabs and BagnonConsolidatorDB.guildTabs[guildKey] then
 			for itemID, entry in pairs(BagnonConsolidatorDB.guildTabs[guildKey]) do
 				if entry.tab == activeGuildTab then
-					local itemName = entry.name or ("Item " .. itemID)
+					local itemName = entry.name or string.format(L["Item %d"], itemID)
 					local match = true
 					if searchQuery ~= "" then
 						local lowerQuery = searchQuery:lower()
@@ -119,7 +120,7 @@ local function GetItemsForCurrentView()
 			local function addConflicts(keyDict)
 				if not keyDict then return end
 				for itemID, conf in pairs(keyDict) do
-					local itemName = conf.name or ("Item " .. itemID)
+					local itemName = conf.name or string.format(L["Item %d"], itemID)
 					local match = true
 					if searchQuery ~= "" then
 						local lowerQuery = searchQuery:lower()
@@ -132,8 +133,8 @@ local function GetItemsForCurrentView()
 							id = itemID,
 							name = itemName,
 							category = "conflicts",
-							reason = conf.reason or "Multiple destinations",
-							destName = "Conflict (Go Nowhere)",
+							reason = conf.reason or L["Multiple destinations"],
+							destName = L["Conflict (Go Nowhere)"],
 							count = 0,
 						})
 					end
@@ -158,7 +159,7 @@ local function GetItemsForCurrentView()
 						id = itemID,
 						name = itemName,
 						category = "ignored",
-						destName = "Ignored (Never Deposit)",
+						destName = L["Ignored (Never Deposit)"],
 						count = 0,
 					})
 				end
@@ -222,42 +223,42 @@ function Viewer:Refresh()
 
 	-- Update sub-navigation tab texts and badges
 	if frame.personalTab then
-		frame.personalTab:SetText(string.format("Personal (%d)", CountCategory("personal")))
+		frame.personalTab:SetText(string.format(L["Personal (%d)"], CountCategory("personal")))
 	end
 	if frame.guildDropTab then
 		if activeTab == "guild" then
-			frame.guildDropTab:SetText(string.format("Tab %d >", activeGuildTab))
+			frame.guildDropTab:SetText(string.format(L["Tab %d >"], activeGuildTab))
 		else
-			frame.guildDropTab:SetText("Guild Bank >")
+			frame.guildDropTab:SetText(L["Guild Bank >"])
 		end
 	end
 	if frame.conflictsTab then
-		frame.conflictsTab:SetText(string.format("Conflicts (%d)", CountCategory("conflicts")))
+		frame.conflictsTab:SetText(string.format(L["Conflicts (%d)"], CountCategory("conflicts")))
 	end
 	if frame.ignoredTab then
-		frame.ignoredTab:SetText(string.format("Ignored (%d)", CountCategory("ignored")))
+		frame.ignoredTab:SetText(string.format(L["Ignored (%d)"], CountCategory("ignored")))
 	end
 
 	-- Update view header title above the list
 	if frame.viewHeaderTitle then
 		if activeTab == "personal" then
-			frame.viewHeaderTitle:SetText("|cff82c5ffPersonal Bank:|r " .. (Addon.GetCharacterKey() or "Current Character"))
+			frame.viewHeaderTitle:SetText(string.format(L["Personal Bank Header"], (Addon.GetCharacterKey() or L["Current Character"])))
 		elseif activeTab == "guild" then
 			local customName = GetCustomTabName(activeGuildTab)
-			local defaultName = "Tab " .. activeGuildTab
+			local defaultName = string.format(L["Tab %d"], activeGuildTab)
 			if customName and customName ~= "" and customName:lower() ~= defaultName:lower() then
-				frame.viewHeaderTitle:SetText(string.format("|cff82c5ffGuild Bank:|r Tab %d: %s", activeGuildTab, customName))
+				frame.viewHeaderTitle:SetText(string.format(L["Guild Bank Header Custom"], activeGuildTab, customName))
 			else
-				frame.viewHeaderTitle:SetText(string.format("|cff82c5ffGuild Bank:|r Tab %d", activeGuildTab))
+				frame.viewHeaderTitle:SetText(string.format(L["Guild Bank Header"], activeGuildTab))
 			end
 		elseif activeTab == "conflicts" then
-			frame.viewHeaderTitle:SetText("|cffffcc00Conflicts:|r Items with Multiple Destinations (Go Nowhere)")
+			frame.viewHeaderTitle:SetText(L["Conflicts Header"])
 		elseif activeTab == "ignored" then
-			frame.viewHeaderTitle:SetText("|cffff8888Ignored:|r Items Excluded from Consolidation")
+			frame.viewHeaderTitle:SetText(L["Ignored Header"])
 		end
 	end
 
-	frame.itemCountText:SetText(string.format("Showing %d items", #items))
+	frame.itemCountText:SetText(string.format(L["Showing %d items"], #items))
 
 	for i = 1, MAX_ROWS do
 		local row = itemRows[i]
@@ -277,12 +278,12 @@ function Viewer:Refresh()
 			row.nameText:SetText(itemLink or itemName)
 
 			if itemData.category == "ignored" then
-				row.subText:SetText("|cffff8888Ignored - will not consolidate|r")
-				row.deleteBtn:SetText("Restore")
+				row.subText:SetText("|cffff8888" .. L["Ignored - will not consolidate"] .. "|r")
+				row.deleteBtn:SetText(L["Restore"])
 				row.icon:SetDesaturated(true)
 			elseif itemData.category == "conflicts" then
-				row.subText:SetText("|cffffcc00Conflict: " .. (itemData.reason or "Multiple destinations") .. "|r")
-				row.deleteBtn:SetText("Clear")
+				row.subText:SetText("|cffffcc00" .. string.format(L["Conflict: %s"], (itemData.reason or L["Multiple destinations"])) .. "|r")
+				row.deleteBtn:SetText(L["Clear"])
 				row.icon:SetDesaturated(false)
 			else
 				if itemType and itemSubType and itemType ~= "" then
@@ -290,9 +291,9 @@ function Viewer:Refresh()
 				elseif itemType and itemType ~= "" then
 					row.subText:SetText("|cff888888" .. itemType .. " (ID: " .. itemID .. ")|r")
 				else
-					row.subText:SetText("|cff888888Item ID: " .. itemID .. "|r")
+					row.subText:SetText("|cff888888" .. string.format(L["Item ID: %d"], itemID) .. "|r")
 				end
-				row.deleteBtn:SetText("Ignore [X]")
+				row.deleteBtn:SetText(L["Ignore [X]"])
 				row.icon:SetDesaturated(false)
 			end
 		else
@@ -324,7 +325,7 @@ local function CreateViewerFrame()
 	-- Title
 	local title = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
 	title:SetPoint("TOP", frame, "TOP", 0, -14)
-	title:SetText("Bagnon Consolidator: Mappings")
+	title:SetText(L["Bagnon Consolidator: Mappings"])
 
 	-- Close Button
 	local closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
@@ -334,7 +335,7 @@ local function CreateViewerFrame()
 	local snapBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	snapBtn:SetSize(140, 24)
 	snapBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -42)
-	snapBtn:SetText("Take Snapshot")
+	snapBtn:SetText(L["Take Snapshot"])
 	snapBtn:SetScript("OnClick", function()
 		if Addon.TakeSnapshot then
 			Addon.TakeSnapshot()
@@ -344,13 +345,14 @@ local function CreateViewerFrame()
 	local resetBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	resetBtn:SetSize(140, 24)
 	resetBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -16, -42)
-	resetBtn:SetText("Reset Mappings...")
+	resetBtn:SetText(L["Reset Mappings..."])
 	resetBtn:SetScript("OnClick", function()
-		local scope = GetCurrentScope()
-		local label = scope
-		if activeTab == "guild" then label = Addon.GetGuildKey() or "Guild Bank"
-		elseif activeTab == "personal" then label = Addon.GetCharacterKey() or "Personal Bank"
-		else label = "All Addon Data" end
+		local label = L["All Addon Data"]
+		if activeTab == "guild" then
+			label = Addon.GetGuildKey() or L["Guild Bank"]
+		elseif activeTab == "personal" then
+			label = Addon.GetCharacterKey() or L["Personal Bank"]
+		end
 		StaticPopup_Show("BAGNON_CONSOLIDATOR_RESET_CONFIRM", label, nil, activeTab)
 	end)
 
@@ -369,18 +371,18 @@ local function CreateViewerFrame()
 	local personalTab = CreateFrame("Button", nil, navContainer, "UIPanelButtonTemplate")
 	personalTab:SetSize(115, 22)
 	personalTab:SetPoint("LEFT", navContainer, "LEFT", 0, 0)
-	personalTab:SetText("Personal")
+	personalTab:SetText(L["Personal"])
 	personalTab:SetScript("OnClick", function() SelectTab("personal") end)
 	frame.personalTab = personalTab
 
 	local guildDropTab = CreateFrame("Button", nil, navContainer, "UIPanelButtonTemplate") --[[@as Button]]
 	guildDropTab:SetSize(125, 22)
 	guildDropTab:SetPoint("LEFT", personalTab, "RIGHT", 4, 0)
-	guildDropTab:SetText("Guild Bank >")
+	guildDropTab:SetText(L["Guild Bank >"])
 	guildDropTab:SetScript("OnClick", function()
 		MenuUtil.CreateContextMenu(guildDropTab, function(_, menu)
 			menu:SetTag("BagnonConsolidatorGuildTabs")
-			menu:CreateTitle("Select Guild Bank Tab")
+			menu:CreateTitle(L["Select Guild Bank Tab"])
 			local numTabs = MAX_GUILDBANK_TABS or 8
 			for i = 1, numTabs do
 				local tabLabel = GetTabDisplayName(i)
@@ -396,14 +398,14 @@ local function CreateViewerFrame()
 	local conflictsTab = CreateFrame("Button", nil, navContainer, "UIPanelButtonTemplate")
 	conflictsTab:SetSize(115, 22)
 	conflictsTab:SetPoint("LEFT", guildDropTab, "RIGHT", 4, 0)
-	conflictsTab:SetText("Conflicts")
+	conflictsTab:SetText(L["Conflicts"])
 	conflictsTab:SetScript("OnClick", function() SelectTab("conflicts") end)
 	frame.conflictsTab = conflictsTab
 
 	local ignoredTab = CreateFrame("Button", nil, navContainer, "UIPanelButtonTemplate")
 	ignoredTab:SetSize(115, 22)
 	ignoredTab:SetPoint("LEFT", conflictsTab, "RIGHT", 4, 0)
-	ignoredTab:SetText("Ignored")
+	ignoredTab:SetText(L["Ignored"])
 	ignoredTab:SetScript("OnClick", function() SelectTab("ignored") end)
 	frame.ignoredTab = ignoredTab
 
@@ -427,11 +429,11 @@ local function CreateViewerFrame()
 
 	local searchLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 	searchLabel:SetPoint("LEFT", searchBox, "RIGHT", 8, 0)
-	searchLabel:SetText("Filter by name/ID")
+	searchLabel:SetText(L["Filter by name/ID"])
 
 	local countText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	countText:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20, -130)
-	countText:SetText("Showing 0 items")
+	countText:SetText(L["Showing 0 items"])
 	frame.itemCountText = countText
 
 	-- Scroll Frame
@@ -476,7 +478,7 @@ local function CreateViewerFrame()
 		local delBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
 		delBtn:SetSize(80, 22)
 		delBtn:SetPoint("RIGHT", row, "RIGHT", -6, 0)
-		delBtn:SetText("Remove")
+		delBtn:SetText(L["Remove"])
 		delBtn:SetScript("OnClick", function()
 			local data = row.itemData
 			if not data or not BagnonConsolidatorDB then return end
@@ -490,17 +492,17 @@ local function CreateViewerFrame()
 					BagnonConsolidatorDB.personalBanks[charKey][itemID] = nil
 				end
 				BagnonConsolidatorDB.ignored[itemID] = itemName
-				Addon.Print(itemName .. " moved to Ignored list.")
+				Addon.Print(string.format(L["%s moved to Ignored list."], itemName))
 			elseif data.category == "guild" then
 				local guildKey = Addon.GetGuildKey()
 				if guildKey and BagnonConsolidatorDB.guildTabs[guildKey] then
 					BagnonConsolidatorDB.guildTabs[guildKey][itemID] = nil
 				end
 				BagnonConsolidatorDB.ignored[itemID] = itemName
-				Addon.Print(itemName .. " moved to Ignored list.")
+				Addon.Print(string.format(L["%s moved to Ignored list."], itemName))
 			elseif data.category == "ignored" then
 				BagnonConsolidatorDB.ignored[itemID] = nil
-				Addon.Print(itemName .. " removed from Ignored list (can be re-learned on next snapshot).")
+				Addon.Print(string.format(L["%s removed from Ignored list (can be re-learned on next snapshot)."], itemName))
 			elseif data.category == "conflicts" then
 				local guildKey = Addon.GetGuildKey()
 				local charKey = Addon.GetCharacterKey()
@@ -510,7 +512,7 @@ local function CreateViewerFrame()
 				if charKey and BagnonConsolidatorDB.conflicts[charKey] then
 					BagnonConsolidatorDB.conflicts[charKey][itemID] = nil
 				end
-				Addon.Print(itemName .. " conflict cleared.")
+				Addon.Print(string.format(L["%s conflict cleared."], itemName))
 			end
 
 			Viewer:Refresh()
@@ -538,22 +540,22 @@ end
 
 -- Register Addon Options in Blizzard Settings Panel
 local optionsCategoryFrame = CreateFrame("Frame", "BagnonConsolidatorOptionsPanel", UIParent)
-optionsCategoryFrame.name = "Bagnon Consolidator"
+optionsCategoryFrame.name = L["Bagnon Consolidator"]
 
 local optTitle = optionsCategoryFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 optTitle:SetPoint("TOPLEFT", 16, -16)
-optTitle:SetText("Bagnon Consolidator")
+optTitle:SetText(L["Bagnon Consolidator"])
 
 local optDesc = optionsCategoryFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
 optDesc:SetPoint("TOPLEFT", optTitle, "BOTTOMLEFT", 0, -8)
 optDesc:SetPoint("RIGHT", optionsCategoryFrame, "RIGHT", -16, 0)
 optDesc:SetJustifyH("LEFT")
-optDesc:SetText("Auto-deposits and consolidates item stacks from your bags to the bank or guild bank based on your physical bank snapshot.")
+optDesc:SetText(L["Options Description"])
 
 local openViewerBtn = CreateFrame("Button", nil, optionsCategoryFrame, "UIPanelButtonTemplate")
 openViewerBtn:SetSize(180, 26)
 openViewerBtn:SetPoint("TOPLEFT", optDesc, "BOTTOMLEFT", 0, -16)
-openViewerBtn:SetText("Open Mappings Viewer...")
+openViewerBtn:SetText(L["Open Mappings Viewer..."])
 openViewerBtn:SetScript("OnClick", function()
 	Viewer:Toggle()
 end)
@@ -561,7 +563,7 @@ end)
 local debugCheck = CreateFrame("CheckButton", "BagnonConsolidatorDebugCheck", optionsCategoryFrame, "InterfaceOptionsCheckButtonTemplate")
 debugCheck:SetPoint("TOPLEFT", openViewerBtn, "BOTTOMLEFT", 0, -12)
 if _G[debugCheck:GetName() .. "Text"] then
-	_G[debugCheck:GetName() .. "Text"]:SetText("Enable Debug Logs")
+	_G[debugCheck:GetName() .. "Text"]:SetText(L["Enable Debug Logs"])
 end
 debugCheck:SetScript("OnShow", function(self)
 	self:SetChecked(BagnonConsolidatorDB and BagnonConsolidatorDB.enableDebug or false)

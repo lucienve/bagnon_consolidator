@@ -9,6 +9,8 @@
 local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local C = LibStub('C_Everywhere')
 local LibItemMove = LibStub('LibItemMove-1.0')
+local L = LibStub('AceLocale-3.0'):GetLocale('Bagnon_Consolidator')
+Addon.L = L
 local KEYRING_CONTAINER = KEYRING_CONTAINER or -2
 
 local loaderFrame = CreateFrame("Frame")
@@ -63,7 +65,7 @@ local function GetItemName(item)
 		local name = C.C_Item.GetItemInfo(item.itemID)
 		if name then return name end
 	end
-	return "Unknown Item"
+	return L["Unknown Item"]
 end
 
 local function Print(msg)
@@ -85,9 +87,9 @@ Addon.Debug = Debug
 
 -- Static Popup Registration
 StaticPopupDialogs["BAGNON_CONSOLIDATOR_RESET_CONFIRM"] = {
-	text = "Are you sure you want to reset all stored mappings for %s?",
-	button1 = "Yes",
-	button2 = "No",
+	text = L["RESET_CONFIRM_DIALOG"],
+	button1 = L["Yes"],
+	button2 = L["No"],
 	OnAccept = function(self, data)
 		if Addon.ResetMappings then
 			Addon.ResetMappings(data)
@@ -109,9 +111,9 @@ local function ResetMappings(scope)
 			if BagnonConsolidatorDB.conflicts then
 				BagnonConsolidatorDB.conflicts[guildKey] = {}
 			end
-			Print("Reset all guild bank mappings for " .. guildKey)
+			Print(string.format(L["Reset all guild bank mappings for %s"], guildKey))
 		else
-			Print("You are not currently in a guild.")
+			Print(L["You are not currently in a guild."])
 		end
 	elseif scope == "personal" then
 		local charKey = GetCharacterKey()
@@ -120,14 +122,14 @@ local function ResetMappings(scope)
 			if BagnonConsolidatorDB.conflicts then
 				BagnonConsolidatorDB.conflicts[charKey] = {}
 			end
-			Print("Reset all personal bank mappings for " .. charKey)
+			Print(string.format(L["Reset all personal bank mappings for %s"], charKey))
 		end
 	elseif scope == "all" then
 		BagnonConsolidatorDB.guildTabs = {}
 		BagnonConsolidatorDB.personalBanks = {}
 		BagnonConsolidatorDB.ignored = {}
 		BagnonConsolidatorDB.conflicts = {}
-		Print("Reset all Bagnon Consolidator mappings and ignore lists.")
+		Print(L["Reset all Bagnon Consolidator mappings and ignore lists."])
 	end
 
 	if Addon.Viewer and Addon.Viewer.Refresh then
@@ -148,7 +150,7 @@ local function TakeSnapshot(targetFrame)
 	end
 
 	if not frame then
-		Print("Bank or Guild Bank must be open to take a snapshot.")
+		Print(L["Bank or Guild Bank must be open to take a snapshot."])
 		return false
 	end
 
@@ -157,7 +159,7 @@ local function TakeSnapshot(targetFrame)
 	if isGuild then
 		local guildKey = GetGuildKey()
 		if not guildKey then
-			Print("You are not currently in a guild.")
+			Print(L["You are not currently in a guild."])
 			return false
 		end
 
@@ -197,7 +199,7 @@ local function TakeSnapshot(targetFrame)
 
 		for id, tabs in pairs(observedTabs) do
 			local item = itemCache[id]
-			local itemName = item and GetItemName(item) or ("Item " .. id)
+			local itemName = item and GetItemName(item) or string.format(L["Item %d"], id)
 
 			if BagnonConsolidatorDB.ignored and BagnonConsolidatorDB.ignored[id] then
 				skippedIgnoredCount = skippedIgnoredCount + 1
@@ -209,7 +211,7 @@ local function TakeSnapshot(targetFrame)
 					name = itemName,
 					personal = true,
 					tabs = tabList,
-					reason = "Present in both Personal Bank and Guild Bank"
+					reason = L["Present in both Personal Bank and Guild Bank"]
 				}
 				BagnonConsolidatorDB.guildTabs[guildKey][id] = nil
 				conflictCount = conflictCount + 1
@@ -229,7 +231,7 @@ local function TakeSnapshot(targetFrame)
 						name = itemName,
 						personal = false,
 						tabs = tabList,
-						reason = "Present on multiple Guild Bank tabs"
+						reason = L["Present on multiple Guild Bank tabs"]
 					}
 					BagnonConsolidatorDB.guildTabs[guildKey][id] = nil
 					conflictCount = conflictCount + 1
@@ -247,11 +249,11 @@ local function TakeSnapshot(targetFrame)
 			end
 		end
 
-		Print(string.format("Snapshot complete for Guild Bank: %s (%d items mapped, %d conflicts, %d ignored).", guildKey, mappedCount, conflictCount, skippedIgnoredCount))
+		Print(string.format(L["Snapshot complete for Guild Bank: %s (%d items mapped, %d conflicts, %d ignored)."], guildKey, mappedCount, conflictCount, skippedIgnoredCount))
 	else
 		local charKey = GetCharacterKey()
 		if not charKey then
-			Print("Unable to determine character name and realm.")
+			Print(L["Unable to determine character name and realm."])
 			return false
 		end
 
@@ -286,7 +288,7 @@ local function TakeSnapshot(targetFrame)
 											BagnonConsolidatorDB.conflicts[gKey][id] = {
 												name = itemName,
 												personal = true,
-												reason = "Present in personal bank of " .. tostring(charKey)
+												reason = string.format(L["Present in personal bank of %s"], tostring(charKey))
 											}
 										end
 									end
@@ -298,7 +300,7 @@ local function TakeSnapshot(targetFrame)
 			end
 		end
 
-		Print(string.format("Snapshot complete for Personal Bank: %s (%d items mapped, %d ignored).", charKey, mappedCount, skippedIgnoredCount))
+		Print(string.format(L["Snapshot complete for Personal Bank: %s (%d items mapped, %d ignored)."], charKey, mappedCount, skippedIgnoredCount))
 	end
 
 	if Addon.Viewer and Addon.Viewer.Refresh then
@@ -322,9 +324,9 @@ end
 
 function ConsolidateButton:OnEnter()
 	self:ShowTooltip(
-		"Consolidate to Bank",
-		"|cffbbbbbbFinds duplicate items in your bags and moves them to the open bank, consolidating stacks to save space.|r",
-		"|R Options / Mappings"
+		L["Consolidate to Bank"],
+		"|cffbbbbbb" .. L["Consolidate to Bank Tooltip"] .. "|r",
+		"|R " .. L["Options / Mappings"]
 	)
 end
 
@@ -332,34 +334,34 @@ function ConsolidateButton:OnClick(button)
 	if button == "RightButton" then
 		MenuUtil.CreateContextMenu(self, function(_, menu)
 			menu:SetTag("BagnonConsolidatorOptions")
-			menu:CreateTitle("Bagnon Consolidator")
+			menu:CreateTitle(L["Bagnon Consolidator"])
 
-			menu:CreateButton("Open Mappings Viewer...", function()
+			menu:CreateButton(L["Open Mappings Viewer..."], function()
 				if Addon.Viewer and Addon.Viewer.Toggle then
 					Addon.Viewer:Toggle()
 				end
 			end)
 
-			menu:CreateButton("Take Snapshot", function()
+			menu:CreateButton(L["Take Snapshot"], function()
 				TakeSnapshot()
 			end)
 
-			menu:CreateButton("Reset Mappings...", function()
+			menu:CreateButton(L["Reset Mappings..."], function()
 				local scope = "all"
-				local label = "everything"
+				local label = L["All Addon Data"]
 				if Addon.Frames:IsShown('guild') then
 					scope = "guild"
-					label = GetGuildKey() or "Guild Bank"
+					label = GetGuildKey() or L["Guild Bank"]
 				elseif Addon.Frames:IsShown('bank') then
 					scope = "personal"
-					label = GetCharacterKey() or "Personal Bank"
+					label = GetCharacterKey() or L["Personal Bank"]
 				end
 				StaticPopup_Show("BAGNON_CONSOLIDATOR_RESET_CONFIRM", label, nil, scope)
 			end)
 
 			menu:CreateDivider()
 
-			menu:CreateCheckbox("Enable Debug Logs",
+			menu:CreateCheckbox(L["Enable Debug Logs"],
 				function() return BagnonConsolidatorDB and BagnonConsolidatorDB.enableDebug or false end,
 				function()
 					BagnonConsolidatorDB.enableDebug = not BagnonConsolidatorDB.enableDebug
@@ -370,7 +372,7 @@ function ConsolidateButton:OnClick(button)
 	end
 
 	if InCombatLockdown() then
-		Print("Cannot consolidate in combat.")
+		Print(L["Cannot consolidate in combat."])
 		return
 	end
 
@@ -390,7 +392,7 @@ function ConsolidateButton:OnClick(button)
 		end
 	end
 
-	Print("Bank or Guild Bank must be open and active.")
+	Print(L["Bank or Guild Bank must be open and active."])
 end
 
 -- Hook into Bagnon's Extra Buttons list
@@ -413,7 +415,7 @@ local isConsolidating = false
 
 function Engine:Start(frame)
 	if isConsolidating then
-		Print("Consolidation is already in progress.")
+		Print(L["Consolidation is already in progress."])
 		return
 	end
 
@@ -444,8 +446,8 @@ function Engine:Start(frame)
 								if not warnedConflicts[id] then
 									warnedConflicts[id] = true
 									local link = item.hyperlink or ("item:" .. id)
-									local reason = BagnonConsolidatorDB.conflicts[guildKey][id].reason or "Item has conflicting destinations."
-									Print(link .. ": " .. reason .. " (Skipped).")
+									local reason = BagnonConsolidatorDB.conflicts[guildKey][id].reason or L["Item has conflicting destinations."]
+									Print(string.format(L["%s: %s (Skipped)."], link, reason))
 								end
 							else
 								local entry = guildKey and BagnonConsolidatorDB.guildTabs[guildKey] and BagnonConsolidatorDB.guildTabs[guildKey][id]
@@ -464,7 +466,7 @@ function Engine:Start(frame)
 								if not warnedConflicts[id] then
 									warnedConflicts[id] = true
 									local link = item.hyperlink or ("item:" .. id)
-									Print(link .. " has conflicting destinations (Skipped).")
+									Print(string.format(L["%s has conflicting destinations (Skipped)."], link))
 								end
 							else
 								local mapped = charKey and BagnonConsolidatorDB.personalBanks[charKey] and BagnonConsolidatorDB.personalBanks[charKey][id]
@@ -536,15 +538,15 @@ function Engine:Start(frame)
 			elseif event == "DONE" then
 				isConsolidating = false
 				PlaySound(SOUNDKIT.UI_BAG_SORTING_01)
-				Print("Consolidation complete.")
+				Print(L["Consolidation complete."])
 			elseif event == "TIMEOUT_ERROR" or event == "CURSOR_LOCKED_ERROR" or event == "PERMISSION_ERROR" then
 				isConsolidating = false
 				PlaySound(847)
-				Print("Consolidation stopped: " .. tostring(event))
+				Print(string.format(L["Consolidation stopped: %s"], tostring(event)))
 			end
 		end)
 	else
 		PlaySound(847)
-		Print("No items need consolidation.")
+		Print(L["No items need consolidation."])
 	end
 end

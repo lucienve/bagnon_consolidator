@@ -22,6 +22,7 @@ This document tracks the current plan, architectural decisions, and tasks for th
 16. **Settings Options Panel**: Registered under Blizzard's Settings interface with a button to toggle the viewer frame and toggle debug logs.
 17. **Precision Transaction Verification**: Utilizes exact expected destination slot quantities and verifies that the cursor is empty before declaring a move transaction complete.
 18. **Lag Tolerance**: 5-second timeout thresholds for transaction verification and lock checks to handle synchronization lag during peak hours.
+19. **Localization Architecture**: Utilizes `AceLocale-3.0` embedded in `libs/AceLocale-3.0/` with base dictionary `locales/enUS.lua` (`isDefault = true`) and modular skeletons in `locales/` (`deDE`, `frFR`, `esES`, `esMX`, `ruRU`, `zhCN`, `zhTW`, `koKR`, `ptBR`, `itIT`).
 
 ## Completed Tasks
 
@@ -30,3 +31,4 @@ This document tracks the current plan, architectural decisions, and tasks for th
 *   Integrated right-click context menu options (*Take Snapshot*, *Reset Mappings...*, *Open Mappings Viewer...*, *Enable Debug Logs*).
 *   Added confirmation dialog (`StaticPopup`) for resetting mappings.
 *   Updated CLI helper `scripts/dump_mappings.lua` to display ignored items and conflicts.
+*   Integrated `AceLocale-3.0` localization framework across all UI text, dialogs, tooltips, and notification messages.
