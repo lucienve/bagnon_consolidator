@@ -373,7 +373,7 @@ local function CreateViewerFrame()
 	personalTab:SetScript("OnClick", function() SelectTab("personal") end)
 	frame.personalTab = personalTab
 
-	local guildDropTab = CreateFrame("Button", nil, navContainer, "UIPanelButtonTemplate")
+	local guildDropTab = CreateFrame("Button", nil, navContainer, "UIPanelButtonTemplate") --[[@as Button]]
 	guildDropTab:SetSize(125, 22)
 	guildDropTab:SetPoint("LEFT", personalTab, "RIGHT", 4, 0)
 	guildDropTab:SetText("Guild Bank >")

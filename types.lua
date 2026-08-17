@@ -48,6 +48,21 @@ StaticPopup_Show = nil
 ---@type any
 MenuUtil = nil
 
+---@type any
+Settings = nil
+
+---@type fun(frame: any)
+InterfaceOptions_AddCategory = nil
+
+---@type fun(scrollFrame: any): number
+FauxScrollFrame_GetOffset = nil
+---@type fun(scrollFrame: any, numItems: number, numToDisplay: number, valueStep: number)
+FauxScrollFrame_Update = nil
+---@type fun(scrollFrame: any, offset: number)
+FauxScrollFrame_SetOffset = nil
+---@type fun(scrollFrame: any, offset: number, itemHeight: number, updateFunction: fun())
+FauxScrollFrame_OnVerticalScroll = nil
+
 -- Declare LibStub and libraries
 ---@class LibStub
 local LibStub = {}
@@ -70,6 +85,9 @@ function C_Everywhere.GetItemInfoInstant(item) end
 ---@return string itemSubType
 ---@return number itemStackCount
 function C_Everywhere.GetItemInfo(item) end
+---@param item string|number
+---@return string|number itemIcon
+function C_Everywhere.GetItemIcon(item) end
 
 -- Addon private table and module definitions
 ---@class BagnonAddon
@@ -83,8 +101,13 @@ function C_Everywhere.GetItemInfo(item) end
 ---@field ConsolidateButton ConsolidateButton
 ---@field ConsolidateEngine ConsolidateEngine
 ---@field Viewer any
----@field TakeSnapshot fun(frame?: any)
+---@field TakeSnapshot fun(frame?: any): boolean
 ---@field ResetMappings fun(scope?: string)
+---@field GetCharacterKey fun(): string|nil
+---@field GetGuildKey fun(): string|nil
+---@field GetItemName fun(item: any): string
+---@field Print fun(msg: string)
+---@field Debug fun(msg: string)
 _G["Bagnon"] = {} --[[@as BagnonAddon]]
 
 ---@class BagnonTipped

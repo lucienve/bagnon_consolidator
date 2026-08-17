@@ -266,25 +266,29 @@ local function TakeSnapshot(targetFrame)
 				for slot = 1, frame:NumSlots(bag) do
 					local item = frame:GetItemInfo(bag, slot)
 					if item and item ~= Addon.None and item.itemID then
-						local id = item.itemID
+						local id = item.itemID --[[@as number]]
 						local itemName = GetItemName(item)
 
 						if BagnonConsolidatorDB.ignored and BagnonConsolidatorDB.ignored[id] then
 							skippedIgnoredCount = skippedIgnoredCount + 1
 						else
-							BagnonConsolidatorDB.personalBanks[charKey][id] = itemName
-							mappedCount = mappedCount + 1
+							if BagnonConsolidatorDB.personalBanks and BagnonConsolidatorDB.personalBanks[charKey] then
+								BagnonConsolidatorDB.personalBanks[charKey][id] = itemName
+								mappedCount = mappedCount + 1
+							end
 
 							if BagnonConsolidatorDB.guildTabs then
 								for gKey, gItems in pairs(BagnonConsolidatorDB.guildTabs) do
-									if gItems[id] then
+									if gItems and gItems[id] then
 										gItems[id] = nil
-										BagnonConsolidatorDB.conflicts[gKey] = BagnonConsolidatorDB.conflicts[gKey] or {}
-										BagnonConsolidatorDB.conflicts[gKey][id] = {
-											name = itemName,
-											personal = true,
-											reason = "Present in personal bank of " .. charKey
-										}
+										if BagnonConsolidatorDB.conflicts then
+											BagnonConsolidatorDB.conflicts[gKey] = BagnonConsolidatorDB.conflicts[gKey] or {}
+											BagnonConsolidatorDB.conflicts[gKey][id] = {
+												name = itemName,
+												personal = true,
+												reason = "Present in personal bank of " .. tostring(charKey)
+											}
+										end
 									end
 								end
 							end
