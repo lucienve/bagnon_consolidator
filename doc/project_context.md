@@ -11,8 +11,9 @@ Bagnon Consolidator addon.
    `Bagnon.Inventory.GetExtraButtons()` at runtime to insert a custom button into
    the backpack frame.
 3. **Loading Manifest**: Uses `Bagnon_Consolidator.toc` to load `main.xml`, which
-   loads `libs/libItemMove/libItemMove.xml`, followed by `main.lua` and `ui.lua`
-   to respect BagBrother's manifest conventions.
+   loads `libs/libItemMove/libItemMove.xml`, followed by modular scripts in
+   `core/` (`init.lua`, `utils.lua`, `snapshot.lua`, `engine.lua`) and `ui/`
+   (`button.lua`, `viewer.lua`, `options.lua`) in topological dependency order.
 4. **Guild Bank Safeguard**: Skip items found in multiple guild bank tabs to
    preserve player categorization; flag under Conflicts.
 5. **Guild Bank Processing**: Processed tab-by-tab sequentially. Handled by
@@ -41,9 +42,10 @@ Bagnon Consolidator addon.
 13. **Strict Personal/Guild Mutual Exclusivity**: If an item is present in both
     personal bank and guild bank (or across multiple guild tabs), it is mapped
     to `conflicts` (Go Nowhere) and skipped during consolidation.
-14. **Management Viewer Frame (`ui.lua`)**: Provides a standalone GUI modal to
-    inspect destinations (`Personal`, `Guild Tabs 1–8`, `Conflicts`, `Ignored`),
-    filter items in real time, and prune entries via per-item `[✕]` buttons.
+14. **Management Viewer Frame (`ui/viewer.lua`)**: Provides a standalone GUI
+    modal to inspect destinations (`Personal`, `Guild Tabs 1–8`, `Conflicts`,
+    `Ignored`), filter items in real time, and prune entries via per-item `[✕]`
+    buttons.
 15. **Context Menu Shortcuts**: Right-clicking the backpack Consolidate button
     brings up a `MenuUtil` context menu offering *Open Mappings Viewer...*,
     *Take Snapshot*, *Reset Mappings...*, and the *Enable Debug Logs* toggle.
@@ -65,7 +67,7 @@ Bagnon Consolidator addon.
     packaging dependency management via `.pkgmeta`. Releases use
     `manual-changelog` pointing to `CHANGELOG.md` for player-friendly release
     notes. Releases are gated behind a presubmit verification job
-    (`setup_types.sh`, `lua-typecheck-action`, `luac -p`).
+    (`setup_types.sh`, `lua-typecheck-action`, `luac -p`, and unit tests).
 21. **Mock Unit Testing Harness**: Implemented in
     [`tests/test_consolidator.lua`](../tests/test_consolidator.lua) with a pure
     Lua mock environment for Blizzard FrameXML, `C_Everywhere`, `LibItemMove`,
@@ -90,7 +92,12 @@ Bagnon Consolidator addon.
   (`.github/workflows/release.yml`).
 * Implemented Phase 1: Test-First Unit Testing Suite
   ([`tests/test_consolidator.lua`](../tests/test_consolidator.lua)) establishing
-  a 45-assertion baseline test suite against current business logic.
+  a 46-assertion baseline test suite against current business logic.
+* Implemented Phase 2: Modular Restructuring into `core/` and `ui/` packages
+  with `git mv` history preservation and updated `main.xml` load order.
+* Implemented Phase 3: Manifests, CI Integration & Documentation updates
+  (added unit testing and syntax checks to GitHub Actions workflow, updated
+  `.pkgmeta` ignore rules, and refreshed architectural documentation).
 
 ## Release Workflow Guide
 

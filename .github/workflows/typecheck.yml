@@ -1,4 +1,4 @@
-name: Lua Typecheck
+name: Lua Verification
 
 on:
   push:
@@ -8,14 +8,25 @@ on:
   workflow_call:
 
 jobs:
-  typecheck:
-    name: Lua Typecheck
+  verify:
+    name: Typecheck & Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
           submodules: recursive
+
+      - name: Setup Lua 5.1
+        uses: leafo/gh-actions-lua@v10
+        with:
+          luaVersion: "5.1.5"
+
+      - name: Run Syntax Check
+        run: luac -p core/*.lua ui/*.lua types.lua tests/test_consolidator.lua
+
+      - name: Run Unit Tests
+        run: lua tests/test_consolidator.lua
 
       - name: Setup types
         run: bash scripts/setup_types.sh
@@ -24,5 +35,3 @@ jobs:
         uses: mrcjkb/lua-typecheck-action@v1.1.0
         with:
           checklevel: Warning
-
-

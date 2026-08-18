@@ -20,6 +20,7 @@ ignore:
   - .types
   - doc
   - scripts
+  - tests
   - types.lua
   - libs/libItemMove/.git
   - libs/libItemMove/.gitignore
