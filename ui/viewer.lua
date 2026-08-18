@@ -1,5 +1,5 @@
 --[[
-	Bagnon Consolidator - Viewer & Options UI
+	Bagnon Consolidator - Mappings Viewer Modal Window
 	Author: LVE
 	All Rights Reserved
 --]]
@@ -22,9 +22,9 @@ local ROW_HEIGHT = 42
 
 local function GetCurrentScope()
 	if activeTab == "guild" then
-		return Addon.GetGuildKey() or "guild"
+		return (Addon.GetGuildKey and Addon.GetGuildKey()) or "guild"
 	elseif activeTab == "personal" then
-		return Addon.GetCharacterKey() or "personal"
+		return (Addon.GetCharacterKey and Addon.GetCharacterKey()) or "personal"
 	end
 	return "all"
 end
@@ -33,7 +33,7 @@ local function GetCustomTabName(tabIdx)
 	local liveName = GetGuildBankTabInfo and GetGuildBankTabInfo(tabIdx)
 	if liveName and liveName ~= "" then return liveName end
 
-	local guildKey = Addon.GetGuildKey()
+	local guildKey = Addon.GetGuildKey and Addon.GetGuildKey()
 	if guildKey and BagnonConsolidatorDB then
 		if BagnonConsolidatorDB.tabNames and BagnonConsolidatorDB.tabNames[guildKey] then
 			local savedName = BagnonConsolidatorDB.tabNames[guildKey][tabIdx]
@@ -62,8 +62,8 @@ end
 
 local function GetItemsForCurrentView()
 	local items = {}
-	local guildKey = Addon.GetGuildKey()
-	local charKey = Addon.GetCharacterKey()
+	local guildKey = Addon.GetGuildKey and Addon.GetGuildKey()
+	local charKey = Addon.GetCharacterKey and Addon.GetCharacterKey()
 
 	if not BagnonConsolidatorDB then
 		return items
@@ -178,8 +178,8 @@ end
 local function CountCategory(cat, tabIdx)
 	if not BagnonConsolidatorDB then return 0 end
 	local count = 0
-	local guildKey = Addon.GetGuildKey()
-	local charKey = Addon.GetCharacterKey()
+	local guildKey = Addon.GetGuildKey and Addon.GetGuildKey()
+	local charKey = Addon.GetCharacterKey and Addon.GetCharacterKey()
 
 	if cat == "personal" then
 		if charKey and BagnonConsolidatorDB.personalBanks and BagnonConsolidatorDB.personalBanks[charKey] then
@@ -242,7 +242,7 @@ function Viewer:Refresh()
 	-- Update view header title above the list
 	if frame.viewHeaderTitle then
 		if activeTab == "personal" then
-			frame.viewHeaderTitle:SetText(string.format(L["Personal Bank Header"], (Addon.GetCharacterKey() or L["Current Character"])))
+			frame.viewHeaderTitle:SetText(string.format(L["Personal Bank Header"], ((Addon.GetCharacterKey and Addon.GetCharacterKey()) or L["Current Character"])))
 		elseif activeTab == "guild" then
 			local customName = GetCustomTabName(activeGuildTab)
 			local defaultName = string.format(L["Tab %d"], activeGuildTab)
@@ -359,9 +359,9 @@ local function CreateViewerFrame()
 	resetBtn:SetScript("OnClick", function()
 		local label = L["All Addon Data"]
 		if activeTab == "guild" then
-			label = Addon.GetGuildKey() or L["Guild Bank"]
+			label = (Addon.GetGuildKey and Addon.GetGuildKey()) or L["Guild Bank"]
 		elseif activeTab == "personal" then
-			label = Addon.GetCharacterKey() or L["Personal Bank"]
+			label = (Addon.GetCharacterKey and Addon.GetCharacterKey()) or L["Personal Bank"]
 		end
 		StaticPopup_Show("BAGNON_CONSOLIDATOR_RESET_CONFIRM", label, nil, activeTab)
 	end)
@@ -497,14 +497,14 @@ local function CreateViewerFrame()
 			local itemName = data.name
 
 			if data.category == "personal" then
-				local charKey = Addon.GetCharacterKey()
+				local charKey = Addon.GetCharacterKey and Addon.GetCharacterKey()
 				if charKey and BagnonConsolidatorDB.personalBanks[charKey] then
 					BagnonConsolidatorDB.personalBanks[charKey][itemID] = nil
 				end
 				BagnonConsolidatorDB.ignored[itemID] = itemName
 				Addon.Print(string.format(L["%s moved to Ignored list."], itemName))
 			elseif data.category == "guild" then
-				local guildKey = Addon.GetGuildKey()
+				local guildKey = Addon.GetGuildKey and Addon.GetGuildKey()
 				if guildKey and BagnonConsolidatorDB.guildTabs[guildKey] then
 					BagnonConsolidatorDB.guildTabs[guildKey][itemID] = nil
 				end
@@ -514,8 +514,8 @@ local function CreateViewerFrame()
 				BagnonConsolidatorDB.ignored[itemID] = nil
 				Addon.Print(string.format(L["%s removed from Ignored list (can be re-learned on next snapshot)."], itemName))
 			elseif data.category == "conflicts" then
-				local guildKey = Addon.GetGuildKey()
-				local charKey = Addon.GetCharacterKey()
+				local guildKey = Addon.GetGuildKey and Addon.GetGuildKey()
+				local charKey = Addon.GetCharacterKey and Addon.GetCharacterKey()
 				if guildKey and BagnonConsolidatorDB.conflicts[guildKey] then
 					BagnonConsolidatorDB.conflicts[guildKey][itemID] = nil
 				end
@@ -546,48 +546,4 @@ function Viewer:Toggle()
 		frame:Show()
 		Viewer:Refresh()
 	end
-end
-
--- Register Addon Options in Blizzard Settings Panel
-local optionsCategoryFrame = CreateFrame("Frame", "BagnonConsolidatorOptionsPanel", UIParent)
-optionsCategoryFrame.name = L["Bagnon Consolidator"]
-
-local optTitle = optionsCategoryFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-optTitle:SetPoint("TOPLEFT", 16, -16)
-optTitle:SetText(L["Bagnon Consolidator"])
-
-local optDesc = optionsCategoryFrame:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-optDesc:SetPoint("TOPLEFT", optTitle, "BOTTOMLEFT", 0, -8)
-optDesc:SetPoint("RIGHT", optionsCategoryFrame, "RIGHT", -16, 0)
-optDesc:SetJustifyH("LEFT")
-optDesc:SetText(L["Options Description"])
-
-local openViewerBtn = CreateFrame("Button", nil, optionsCategoryFrame, "UIPanelButtonTemplate")
-openViewerBtn:SetSize(180, 26)
-openViewerBtn:SetPoint("TOPLEFT", optDesc, "BOTTOMLEFT", 0, -16)
-openViewerBtn:SetText(L["Open Mappings Viewer..."])
-openViewerBtn:SetScript("OnClick", function()
-	Viewer:Toggle()
-end)
-
-local debugCheck = CreateFrame("CheckButton", "BagnonConsolidatorDebugCheck", optionsCategoryFrame, "InterfaceOptionsCheckButtonTemplate")
-debugCheck:SetPoint("TOPLEFT", openViewerBtn, "BOTTOMLEFT", 0, -12)
-if _G[debugCheck:GetName() .. "Text"] then
-	_G[debugCheck:GetName() .. "Text"]:SetText(L["Enable Debug Logs"])
-end
-debugCheck:SetScript("OnShow", function(self)
-	self:SetChecked(BagnonConsolidatorDB and BagnonConsolidatorDB.enableDebug or false)
-end)
-debugCheck:SetScript("OnClick", function(self)
-	if BagnonConsolidatorDB then
-		BagnonConsolidatorDB.enableDebug = self:GetChecked()
-		LibStub('LibItemMove-1.0').Debug = BagnonConsolidatorDB.enableDebug
-	end
-end)
-
-if Settings and Settings.RegisterCanvasLayoutCategory then
-	local category = Settings.RegisterCanvasLayoutCategory(optionsCategoryFrame, optionsCategoryFrame.name)
-	Settings.RegisterAddOnCategory(category)
-elseif InterfaceOptions_AddCategory then
-	InterfaceOptions_AddCategory(optionsCategoryFrame)
 end

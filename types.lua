@@ -119,6 +119,7 @@ function C_Everywhere.GetItemIcon(item) end
 ---@field ResetMappings fun(scope?: string)
 ---@field GetCharacterKey fun(): string|nil
 ---@field GetGuildKey fun(): string|nil
+---@field IsItemInAnyPersonalBank fun(itemID: number): boolean
 ---@field GetItemName fun(item: any): string
 ---@field Print fun(msg: string)
 ---@field Debug fun(msg: string)

@@ -351,23 +351,15 @@ local function loadAddonFile(filePath)
 	fn("Bagnon_Consolidator", Addon)
 end
 
--- Load addon files (supports both pre-refactor and post-refactor paths)
+-- Load addon files in topological manifest order
 local function LoadAddonScripts()
-	local okCore, _ = pcall(function()
-		loadAddonFile("core/init.lua")
-		loadAddonFile("core/utils.lua")
-		loadAddonFile("core/snapshot.lua")
-		loadAddonFile("core/engine.lua")
-		loadAddonFile("ui/button.lua")
-		loadAddonFile("ui/viewer.lua")
-		loadAddonFile("ui/options.lua")
-	end)
-
-	if not okCore then
-		-- Fall back to pre-refactor files
-		loadAddonFile("main.lua")
-		loadAddonFile("ui.lua")
-	end
+	loadAddonFile("core/init.lua")
+	loadAddonFile("core/utils.lua")
+	loadAddonFile("core/snapshot.lua")
+	loadAddonFile("core/engine.lua")
+	loadAddonFile("ui/button.lua")
+	loadAddonFile("ui/viewer.lua")
+	loadAddonFile("ui/options.lua")
 end
 
 LoadAddonScripts()

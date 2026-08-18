@@ -8,9 +8,14 @@
 	<!-- Localization Dictionaries -->
 	<Include file="locales/locales.xml"/>
 
-	<!-- Bagnon Consolidator main script -->
-	<Script file="main.lua"/>
+	<!-- Core Engine & Logic -->
+	<Script file="core/init.lua"/>
+	<Script file="core/utils.lua"/>
+	<Script file="core/snapshot.lua"/>
+	<Script file="core/engine.lua"/>
 
-	<!-- Bagnon Consolidator viewer & options UI -->
-	<Script file="ui.lua"/>
+	<!-- User Interface & Options -->
+	<Script file="ui/button.lua"/>
+	<Script file="ui/viewer.lua"/>
+	<Script file="ui/options.lua"/>
 </Ui>
