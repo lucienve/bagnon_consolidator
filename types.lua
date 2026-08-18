@@ -70,7 +70,12 @@ local LibStub = {}
 ---@return any
 function LibStub:__call(major) end
 
+---@class C_Everywhere_Item
+---@field GetItemInfo fun(item: string|number): string|nil, string|nil, number|nil, number|nil, number|nil, string|nil, string|nil, number|nil, string|nil, string|number|nil
+---@field GetItemIcon fun(item: string|number): string|number|nil
+
 ---@class C_Everywhere
+---@field C_Item C_Everywhere_Item
 local C_Everywhere = {}
 ---@param item string
 ---@return number itemID
@@ -88,6 +93,10 @@ function C_Everywhere.GetItemInfo(item) end
 ---@param item string|number
 ---@return string|number itemIcon
 function C_Everywhere.GetItemIcon(item) end
+
+---@class LibItemMove
+---@field Debug boolean|nil
+---@field Move fun(self: LibItemMove, queue: table, context: string, callback?: fun(event: string, ...))
 
 ---@class AceLocale30
 ---@field NewLocale fun(self: AceLocale30, application: string, locale: string, isDefault?: boolean, silent?: boolean): table<string, any>|nil

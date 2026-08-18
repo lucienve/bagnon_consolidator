@@ -6,7 +6,7 @@
 
 ---@type string, BagnonAddon
 local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
-local C = LibStub('C_Everywhere')
+local C = LibStub('C_Everywhere') --[[@as C_Everywhere]]
 local L = Addon.L or LibStub('AceLocale-3.0'):GetLocale('Bagnon_Consolidator')
 
 local Viewer = {}
@@ -270,9 +270,19 @@ function Viewer:Refresh()
 			row:Show()
 
 			local itemID = itemData.id
-			local itemName, itemLink, _, _, _, itemType, itemSubType, _, _, itemTexture = C.C_Item.GetItemInfo(itemID)
-			itemName = itemName or itemData.name
-			itemTexture = itemTexture or C.C_Item.GetItemIcon(itemID) or "Interface/Icons/INV_Misc_QuestionMark"
+			local itemName, itemLink, itemType, itemSubType, itemTexture
+			if C.C_Item and itemID then
+				local _, _, _, _, _, iType, iSubType, _, _, iTex = C.C_Item.GetItemInfo(itemID)
+				local iName, iLink = C.C_Item.GetItemInfo(itemID)
+				itemName = iName or itemData.name
+				itemLink = iLink
+				itemType = iType
+				itemSubType = iSubType
+				itemTexture = iTex or C.C_Item.GetItemIcon(itemID) or "Interface/Icons/INV_Misc_QuestionMark"
+			else
+				itemName = itemData.name
+				itemTexture = "Interface/Icons/INV_Misc_QuestionMark"
+			end
 
 			row.icon:SetTexture(itemTexture)
 			row.nameText:SetText(itemLink or itemName)

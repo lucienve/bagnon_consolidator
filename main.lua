@@ -7,8 +7,8 @@
 
 ---@type string, BagnonAddon
 local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
-local C = LibStub('C_Everywhere')
-local LibItemMove = LibStub('LibItemMove-1.0')
+local C = LibStub('C_Everywhere') --[[@as C_Everywhere]]
+local LibItemMove = LibStub('LibItemMove-1.0') --[[@as LibItemMove]]
 local L = LibStub('AceLocale-3.0'):GetLocale('Bagnon_Consolidator')
 Addon.L = L
 local KEYRING_CONTAINER = KEYRING_CONTAINER or -2
@@ -61,7 +61,7 @@ local function GetItemName(item)
 		local name = item.hyperlink:match("%[(.-)%]")
 		if name then return name end
 	end
-	if item.itemID then
+	if item.itemID and C.C_Item then
 		local name = C.C_Item.GetItemInfo(item.itemID)
 		if name then return name end
 	end
