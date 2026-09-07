@@ -73,6 +73,13 @@ Bagnon Consolidator addon.
     Lua mock environment for Blizzard FrameXML, `C_Everywhere`, `LibItemMove`,
     `AceLocale-3.0`, and `Bagnon` objects to execute regression testing across
     snapshots, conflict detection, queue builders, and viewer operations.
+22. **Three-Pillar Validation & WoW Standards**:
+    Adheres strictly to the Three-Pillar validation gate:
+    - *Pillar 1 (LuaLS)*: Type checking via `.luarc.json` and `types.lua`, eliminating dummy table clobbering.
+    - *Pillar 2 (wow_lua_lint)*: Zero-warning domain and taint linting across Retail, Cataclysm, and Classic Era flavors.
+    - *Pillar 3 (Manifest & Schema Integrity)*: Strict `wow_toc_validate` and `wow_xml_validate` compliance with schema namespace in `main.xml`.
+    - *Asset Resolution*: Uses numeric FileDataIDs (`135738`) for direct CASC texture lookups.
+    - *Docs Structure*: Standardized documentation in `docs/`.
 
 ## Completed Tasks
 
@@ -98,6 +105,10 @@ Bagnon Consolidator addon.
 * Implemented Phase 3: Manifests, CI Integration & Documentation updates
   (added unit testing and syntax checks to GitHub Actions workflow, updated
   `.pkgmeta` ignore rules, and refreshed architectural documentation).
+* Synchronized addon with updated WoW addon development rules, Three-Pillar
+  validation gates (`wow_xml_validate`, `wow_toc_validate`, `wow_lua_lint`,
+  `lua-language-server`), type definitions in `types.lua`, numeric FileDataID
+  texture resolution in `ui/button.lua`, and migrated `doc/` to `docs/`.
 
 ## Release Workflow Guide
 

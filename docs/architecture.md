@@ -61,7 +61,7 @@ bagnon_consolidator/
 ├── scripts/
 │   ├── dump_mappings.lua    # CLI helper to inspect SavedVariables database
 │   └── setup_types.sh       # Type environment setup helper
-└── doc/
+└── docs/
     ├── project_context.md   # Project tasks, plans, and current state
     └── architecture.md      # Addon design and developer instructions (this file)
 ```

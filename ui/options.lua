@@ -53,6 +53,6 @@ end)
 if Settings and Settings.RegisterCanvasLayoutCategory then
 	local category = Settings.RegisterCanvasLayoutCategory(optionsCategoryFrame, optionsCategoryFrame.name)
 	Settings.RegisterAddOnCategory(category)
-elseif InterfaceOptions_AddCategory then
-	InterfaceOptions_AddCategory(optionsCategoryFrame)
+elseif _G.InterfaceOptions_AddCategory then
+	_G.InterfaceOptions_AddCategory(optionsCategoryFrame)
 end

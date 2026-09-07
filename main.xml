@@ -1,4 +1,4 @@
-<Ui>
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
 	<!-- Embed LibItemMove-1.0 library -->
 	<Include file="libs/libItemMove/libItemMove.xml"/>
 

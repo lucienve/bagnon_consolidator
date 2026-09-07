@@ -20,8 +20,9 @@ Understand the file layout of this independent addon before modifying components
 - **Root Directory:**
   - `Bagnon_Consolidator.toc`: Set dependencies (specifically Bagnon), Author (LVE), Interface versions, and specifies `main.xml` as the entry manifest.
   - `main.xml`: XML manifest loading Lua scripts via `<Script>` tag to respect BagBrother/Bagnon load order guidelines.
-  - `main.lua`: The single script containing core logic, Class definitions, hooks, UI events, and consolidation algorithm.
-- **doc/**: Documentation containing the architectural specifications and task plans.
+  - `core/`: Modular core engine scripts (`init.lua`, `utils.lua`, `snapshot.lua`, `engine.lua`).
+  - `ui/`: User interface and configuration components (`button.lua`, `viewer.lua`, `options.lua`).
+- **docs/**: Documentation containing the architectural specifications and task plans.
   - `architecture.md`: Addon design, algorithms, UI hooks, and database scanning details.
   - `project_context.md`: Architectural decisions and implementation progress checklists.
 - **.agents/**: Agent-specific rules and configurations.

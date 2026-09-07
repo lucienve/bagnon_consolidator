@@ -8,6 +8,10 @@
 local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local C = LibStub('C_Everywhere') --[[@as C_Everywhere]]
 local L = Addon.L or LibStub('AceLocale-3.0'):GetLocale('Bagnon_Consolidator')
+local FauxScrollFrame_GetOffset = _G.FauxScrollFrame_GetOffset
+local FauxScrollFrame_Update = _G.FauxScrollFrame_Update
+local FauxScrollFrame_SetOffset = _G.FauxScrollFrame_SetOffset
+local FauxScrollFrame_OnVerticalScroll = _G.FauxScrollFrame_OnVerticalScroll
 
 local Viewer = {}
 Addon.Viewer = Viewer

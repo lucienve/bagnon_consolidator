@@ -3,11 +3,13 @@
 -- Stub out Blizzard globals not present or recognized in annotations
 ---@class ChatFrame : Frame
 ---@field AddMessage fun(self: ChatFrame, message: string)
-DEFAULT_CHAT_FRAME = {} --[[@as ChatFrame]]
+---@type ChatFrame
+DEFAULT_CHAT_FRAME = DEFAULT_CHAT_FRAME
 
-SOUNDKIT = {
-	UI_BAG_SORTING_01 = 0
-}
+---@class SoundKit
+---@field UI_BAG_SORTING_01 number
+---@type SoundKit
+SOUNDKIT = SOUNDKIT
 
 MAX_GUILDBANK_TABS = 8
 KEYRING_CONTAINER = -2
@@ -30,7 +32,8 @@ KEYRING_CONTAINER = -2
 ---@field ignored table<number, string>
 ---@field conflicts table<string, table<number, BagnonConsolidatorConflictEntry>>
 ---@field enableDebug boolean|nil
-BagnonConsolidatorDB = {}
+---@type BagnonConsolidatorDB
+BagnonConsolidatorDB = BagnonConsolidatorDB
 
 ---@type fun(tab: number): string|nil, string|nil, boolean|nil, boolean|nil, number|nil, number|nil
 GetGuildBankTabInfo = nil
@@ -41,7 +44,7 @@ GetContainerItemInfo = nil
 PickupContainerItem = nil
 
 ---@type table<string, any>
-StaticPopupDialogs = {}
+StaticPopupDialogs = StaticPopupDialogs
 ---@type fun(which: string, text_arg1?: string, text_arg2?: string, data?: any): any
 StaticPopup_Show = nil
 
@@ -123,7 +126,8 @@ function C_Everywhere.GetItemIcon(item) end
 ---@field GetItemName fun(item: any): string
 ---@field Print fun(msg: string)
 ---@field Debug fun(msg: string)
-_G["Bagnon"] = {} --[[@as BagnonAddon]]
+---@type BagnonAddon
+Bagnon = Bagnon
 
 ---@class BagnonTipped
 local BagnonTipped = {}

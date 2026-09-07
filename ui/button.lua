@@ -13,7 +13,7 @@ local ConsolidateButton = Addon.Tipped:NewClass('ConsolidateButton', 'Button', '
 
 function ConsolidateButton:New(parent)
 	local b = self:Super(ConsolidateButton):New(parent)
-	b.Icon:SetTexture("Interface/Icons/Spell_ChargePositive")
+	b.Icon:SetTexture(135738) -- FileDataID for Interface/Icons/Spell_ChargePositive
 	b:RegisterForClicks('anyUp')
 	return b
 end

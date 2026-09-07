@@ -18,7 +18,7 @@ ignore:
   - .markdownlint.json
   - .prettierrc
   - .types
-  - doc
+  - docs
   - scripts
   - tests
   - types.lua
