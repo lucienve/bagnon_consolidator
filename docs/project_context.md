@@ -109,6 +109,9 @@ Bagnon Consolidator addon.
   validation gates (`wow_xml_validate`, `wow_toc_validate`, `wow_lua_lint`,
   `lua-language-server`), type definitions in `types.lua`, numeric FileDataID
   texture resolution in `ui/button.lua`, and migrated `doc/` to `docs/`.
+* Updated `Bagnon_Consolidator.toc` with missing packager flavor directives
+  (`Interface-Mists`, `Interface-Wrath`) and converted `IconTexture` to numeric
+  FileDataID `135738`.
 
 ## Release Workflow Guide
 

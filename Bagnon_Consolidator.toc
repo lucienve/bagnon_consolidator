@@ -2,6 +2,8 @@
 ## Interface-Mainline: 120007
 ## Interface-Classic: 11509
 ## Interface-Cata: 40402
+## Interface-Mists: 50504
+## Interface-Wrath: 38002
 ## Title: Bagnon Consolidator
 ## Notes: Auto-deposits and consolidates item stacks from your bags to the bank or guild bank.
 ## RequiredDeps: Bagnon
@@ -9,7 +11,7 @@
 ## Group: BagBrother
 
 ## Version: @project-version@
-## IconTexture: Interface\Icons\Spell_ChargePositive
+## IconTexture: 135738
 ## Category: Bags & Inventory
 ## SavedVariables: BagnonConsolidatorDB
 ## X-Curse-Project-ID: 1656218
