@@ -112,6 +112,8 @@ Bagnon Consolidator addon.
 * Updated `Bagnon_Consolidator.toc` with missing packager flavor directive
   (`Interface-Mists`), pruned retired expansions (Cataclysm, Wrath, BCC), and
   converted `IconTexture` to numeric FileDataID `135738`.
+* Updated `libs/libItemMove` submodule reference to `2813b54` containing Retail
+  11.0/12.0 container resolution enhancements and cleanups.
 
 ## Release Workflow Guide
 

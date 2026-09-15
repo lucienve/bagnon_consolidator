@@ -1,5 +1,10 @@
 # Bagnon Consolidator Release Notes
 
+## v1.0.1
+
+### Improvements
+* **Library Update:** Updated LibItemMove-1.0 submodule with modernized container resolution for Retail 11.0/12.0 and retired client cleanups.
+
 ## v1.0.0
 
 ### Features
