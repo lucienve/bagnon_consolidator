@@ -76,7 +76,7 @@ Bagnon Consolidator addon.
 22. **Three-Pillar Validation & WoW Standards**:
     Adheres strictly to the Three-Pillar validation gate:
     - *Pillar 1 (LuaLS)*: Type checking via `.luarc.json` and `types.lua`, eliminating dummy table clobbering.
-    - *Pillar 2 (wow_lua_lint)*: Zero-warning domain and taint linting across Retail, Cataclysm, and Classic Era flavors.
+    - *Pillar 2 (wow_lua_lint)*: Zero-warning domain and taint linting across Retail, Mists of Pandaria Classic, and Classic Era flavors.
     - *Pillar 3 (Manifest & Schema Integrity)*: Strict `wow_toc_validate` and `wow_xml_validate` compliance with schema namespace in `main.xml`.
     - *Asset Resolution*: Uses numeric FileDataIDs (`135738`) for direct CASC texture lookups.
     - *Docs Structure*: Standardized documentation in `docs/`.
@@ -109,9 +109,9 @@ Bagnon Consolidator addon.
   validation gates (`wow_xml_validate`, `wow_toc_validate`, `wow_lua_lint`,
   `lua-language-server`), type definitions in `types.lua`, numeric FileDataID
   texture resolution in `ui/button.lua`, and migrated `doc/` to `docs/`.
-* Updated `Bagnon_Consolidator.toc` with missing packager flavor directives
-  (`Interface-Mists`, `Interface-Wrath`) and converted `IconTexture` to numeric
-  FileDataID `135738`.
+* Updated `Bagnon_Consolidator.toc` with missing packager flavor directive
+  (`Interface-Mists`), pruned retired expansions (Cataclysm, Wrath, BCC), and
+  converted `IconTexture` to numeric FileDataID `135738`.
 
 ## Release Workflow Guide
 
