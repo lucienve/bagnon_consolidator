@@ -9,7 +9,7 @@
 ## Group: BagBrother
 
 ## Version: @project-version@
-## IconTexture: 135738
+## IconTexture: 135769
 ## Category: Bags & Inventory
 ## SavedVariables: BagnonConsolidatorDB
 ## X-Curse-Project-ID: 1656218

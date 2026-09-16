@@ -78,7 +78,7 @@ Bagnon Consolidator addon.
     - *Pillar 1 (LuaLS)*: Type checking via `.luarc.json` and `types.lua`, eliminating dummy table clobbering.
     - *Pillar 2 (wow_lua_lint)*: Zero-warning domain and taint linting across Retail, Mists of Pandaria Classic, and Classic Era flavors.
     - *Pillar 3 (Manifest & Schema Integrity)*: Strict `wow_toc_validate` and `wow_xml_validate` compliance with schema namespace in `main.xml`.
-    - *Asset Resolution*: Uses numeric FileDataIDs (`135738`) for direct CASC texture lookups.
+    - *Asset Resolution*: Uses numeric FileDataIDs (`135769`) for direct CASC texture lookups.
     - *Docs Structure*: Standardized documentation in `docs/`.
 
 ## Completed Tasks
@@ -114,6 +114,8 @@ Bagnon Consolidator addon.
   converted `IconTexture` to numeric FileDataID `135738`.
 * Updated `libs/libItemMove` submodule reference to `2813b54` containing Retail
   11.0/12.0 container resolution enhancements and cleanups.
+* Fixed consolidate button and addon icon texture FileDataID from `135738`
+  (`spell_arcane_manatap`) to `135769` (`spell_chargepositive`).
 
 ## Release Workflow Guide
 
