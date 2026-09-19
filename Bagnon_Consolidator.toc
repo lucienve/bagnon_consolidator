@@ -1,7 +1,8 @@
-## Interface: 120007, 50504, 11509
-## Interface-Mainline: 120007
+## Interface: 120100, 50504, 16001, 11509
+## Interface-Mainline: 120100
 ## Interface-Classic: 11509
 ## Interface-Mists: 50504
+## Interface-Forever: 16001
 ## Title: Bagnon Consolidator
 ## Notes: Auto-deposits and consolidates item stacks from your bags to the bank or guild bank.
 ## RequiredDeps: Bagnon

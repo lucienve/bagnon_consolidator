@@ -1,5 +1,17 @@
 # Bagnon Consolidator Release Notes
 
+## v1.0.3
+
+### Features
+* **WoW Forever Support:** Added client compatibility and TOC packaging directives for WoW Forever (Camelot, interface 16001).
+* **Modern Expansion Sync:** Updated Retail interface version to 120100 (Midnight 12.1).
+* **Library Update:** Updated LibItemMove-1.0 submodule to e5390f8 for WoW Forever support.
+
+## v1.0.2
+
+### Bugfixes
+* **Icon Resolution:** Corrected consolidate button icon FileDataID from Mana Tap (`135738`) to Charge Positive (`135769`).
+
 ## v1.0.1
 
 ### Improvements

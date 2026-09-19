@@ -80,6 +80,7 @@ Bagnon Consolidator addon.
     - *Pillar 3 (Manifest & Schema Integrity)*: Strict `wow_toc_validate` and `wow_xml_validate` compliance with schema namespace in `main.xml`.
     - *Asset Resolution*: Uses numeric FileDataIDs (`135769`) for direct CASC texture lookups.
     - *Docs Structure*: Standardized documentation in `docs/`.
+23. **WoW Forever & Multi-Client Support**: Supports Retail (Midnight 12.1, Interface 120100), Mists of Pandaria Classic (Interface 50504), Classic Era (Interface 11509), and WoW Forever (Project Camelot, Interface 16001). Generates `_Camelot.toc` via the BigWigs packager `Interface-Forever: 16001` directive.
 
 ## Completed Tasks
 
@@ -116,6 +117,8 @@ Bagnon Consolidator addon.
   11.0/12.0 container resolution enhancements and cleanups.
 * Fixed consolidate button and addon icon texture FileDataID from `135738`
   (`spell_arcane_manatap`) to `135769` (`spell_chargepositive`).
+* Updated `Bagnon_Consolidator.toc` and `libs/libItemMove` submodule (`e5390f8`)
+  for WoW Forever (Camelot, Interface 16001) and bumped Retail interface to 120100.
 
 ## Release Workflow Guide
 

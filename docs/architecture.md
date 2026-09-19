@@ -26,6 +26,8 @@ into the open bank (personal or guild bank) with the following rules:
    consolidated and are skipped during snapshot ingestion.
 6. **Zero-Stock Retention**: Additive snapshots preserve mappings for
    out-of-stock items until explicitly removed or reset.
+7. **Multi-Flavor Compatibility**: Supports Retail (Midnight 12.1), Mists of
+   Pandaria Classic, Classic Era, and WoW Forever (Camelot, Interface 16001).
 
 ---
 

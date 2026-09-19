@@ -26,6 +26,7 @@
 1. Download the `Bagnon_Consolidator` folder.
 2. Place or extract the folder into your World of Warcraft addons directory depending on your version:
    - **Retail**: `_retail_/Interface/AddOns/Bagnon_Consolidator`
+   - **WoW Forever**: `_forever_/Interface/AddOns/Bagnon_Consolidator`
    - **Classic Era (Vanilla)**: `_classic_era_/Interface/AddOns/Bagnon_Consolidator`
    - **Progression Classic (Mists of Pandaria Classic)**: `_classic_/Interface/AddOns/Bagnon_Consolidator`
 3. Launch the game and ensure **Bagnon Consolidator** is checked in your AddOns list at the character selection screen.
