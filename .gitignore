@@ -1,5 +1,3 @@
-.markdownlint.json
-.prettierrc
 .agents/*
 !.agents/rules/
 .agents/rules/*
