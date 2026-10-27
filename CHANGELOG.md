@@ -1,5 +1,22 @@
 # Bagnon Consolidator Release Notes
 
+## v1.1.0
+
+### Improvements
+* **Mists of Pandaria Classic & Icon Modernization:** Modernized item icon
+  resolution to use `C.C_Item.GetItemIconByID` with numeric FileDataID `134400`
+  fallback across all clients, eliminating invalid item ID queries in modern
+  Classic and Retail.
+* **Settings Checkbutton Modernization:** Migrated options debug checkbox
+  from the deprecated `InterfaceOptionsCheckButtonTemplate` to
+  `UICheckButtonTemplate` with cross-flavor text label resolution.
+* **Submodule Update:** Updated LibItemMove-1.0 submodule to `feaca76`, adding
+  container hyperlink normalization and hardened multi-client container
+  resolution.
+* **Type Annotations & CI Quality Gates:** Added EmmyLua typing for MenuUtil,
+  Settings, and loader frame event handlers, and expanded CI `luac` syntax
+  checks across all localization and script files.
+
 ## v1.0.3
 
 ### Features

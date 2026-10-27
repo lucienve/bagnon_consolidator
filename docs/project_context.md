@@ -138,6 +138,7 @@ the Bagnon Consolidator addon.
   migrated options CheckButton to `UICheckButtonTemplate`, typed `MenuUtil` and
   `Settings` in `types.lua`, added typed parameters to `core/init.lua`, expanded
   `luac -p` coverage in CI, and updated `.agents/` maintenance directives.
+* Prepared v1.1.0 minor release notes in `CHANGELOG.md`.
 
 ## Release Workflow Guide
 
@@ -147,8 +148,8 @@ To publish a new version to CurseForge:
 2. Create and push a semver Git tag:
 
    ```bash
-   git tag v1.0.0
-   git push origin v1.0.0
+   git tag v1.1.0
+   git push origin v1.1.0
    ```
 
 3. The `.github/workflows/release.yml` workflow will automatically run
