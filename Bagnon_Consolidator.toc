@@ -10,6 +10,7 @@
 ## Group: BagBrother
 
 ## Version: @project-version@
+# FileDataID: spell_chargepositive
 ## IconTexture: 135769
 ## Category: Bags & Inventory
 ## SavedVariables: BagnonConsolidatorDB

@@ -41,9 +41,7 @@ bagnon_consolidator/
 ├── .agents/                 # Workspace configurations and rules
 ├── .gitignore               # Git ignore patterns
 ├── .luarc.json              # Lua Language Server configuration
-├── .markdownlint.json       # Linter configuration for Markdown files
 ├── .pkgmeta                 # CurseForge packager configuration
-├── .prettierrc              # Prettier formatting options
 ├── Bagnon_Consolidator.toc  # Set dependencies (Bagnon), loads main.xml
 ├── LICENSE                  # Software license file
 ├── README.md                # User guide, installation guidelines, features
@@ -59,13 +57,13 @@ bagnon_consolidator/
 │   ├── viewer.lua           # Mappings Viewer modal window & search filter
 │   └── options.lua          # Blizzard Settings & Interface Options panel
 ├── tests/
-│   └── test_consolidator.lua# Standalone mock unit test suite (46 assertions)
+│   └── test_consolidator.lua# Standalone mock unit regression test suite
 ├── scripts/
 │   ├── dump_mappings.lua    # CLI helper to inspect SavedVariables database
 │   └── setup_types.sh       # Type environment setup helper
 └── docs/
     ├── project_context.md   # Project tasks, plans, and current state
-    └── architecture.md      # Addon design and developer instructions (this file)
+    └── architecture.md      # Addon design and developer instructions
 ```
 
 ---

@@ -32,10 +32,11 @@ openViewerBtn:SetScript("OnClick", function()
 	end
 end)
 
-local debugCheck = CreateFrame("CheckButton", "BagnonConsolidatorDebugCheck", optionsCategoryFrame, "InterfaceOptionsCheckButtonTemplate")
+local debugCheck = CreateFrame("CheckButton", "BagnonConsolidatorDebugCheck", optionsCategoryFrame, "UICheckButtonTemplate") --[[@as UICheckButton]]
 debugCheck:SetPoint("TOPLEFT", openViewerBtn, "BOTTOMLEFT", 0, -12)
-if _G[debugCheck:GetName() .. "Text"] then
-	_G[debugCheck:GetName() .. "Text"]:SetText(L["Enable Debug Logs"])
+local debugCheckText = debugCheck.Text or _G[debugCheck:GetName() .. "Text"]
+if debugCheckText then
+	debugCheckText:SetText(L["Enable Debug Logs"])
 end
 debugCheck:SetScript("OnShow", function(self)
 	self:SetChecked(BagnonConsolidatorDB and BagnonConsolidatorDB.enableDebug or false)

@@ -11,8 +11,10 @@ DEFAULT_CHAT_FRAME = DEFAULT_CHAT_FRAME
 ---@type SoundKit
 SOUNDKIT = SOUNDKIT
 
-MAX_GUILDBANK_TABS = 8
-KEYRING_CONTAINER = -2
+---@type number
+MAX_GUILDBANK_TABS = MAX_GUILDBANK_TABS
+---@type number
+KEYRING_CONTAINER = KEYRING_CONTAINER
 
 ---@class BagnonConsolidatorDBEntry
 ---@field tab number
@@ -36,35 +38,56 @@ KEYRING_CONTAINER = -2
 BagnonConsolidatorDB = BagnonConsolidatorDB
 
 ---@type fun(tab: number): string|nil, string|nil, boolean|nil, boolean|nil, number|nil, number|nil
-GetGuildBankTabInfo = nil
+GetGuildBankTabInfo = GetGuildBankTabInfo
 
 ---@type fun(bag: number, slot: number): string|nil, number|nil, boolean|nil, number|nil, boolean|nil, boolean|nil, string|nil, boolean|nil, boolean|nil, number|nil
-GetContainerItemInfo = nil
+GetContainerItemInfo = GetContainerItemInfo
 ---@type fun(bag: number, slot: number)
-PickupContainerItem = nil
+PickupContainerItem = PickupContainerItem
 
----@type table<string, any>
+---@type table<string, table>
 StaticPopupDialogs = StaticPopupDialogs
----@type fun(which: string, text_arg1?: string, text_arg2?: string, data?: any): any
-StaticPopup_Show = nil
+---@type fun(which: string, text_arg1?: string, text_arg2?: string, data?: any): Frame|nil
+StaticPopup_Show = StaticPopup_Show
 
----@type any
-MenuUtil = nil
+---@class MenuDescriptionProxy
+---@field SetTag fun(self: MenuDescriptionProxy, tag: string)
+---@field CreateTitle fun(self: MenuDescriptionProxy, text: string): any
+---@field CreateButton fun(self: MenuDescriptionProxy, text: string, callback?: fun()): any
+---@field CreateDivider fun(self: MenuDescriptionProxy): any
+---@field CreateCheckbox fun(self: MenuDescriptionProxy, text: string, isSelected: fun(): boolean, setSelected: fun()): any
 
----@type any
-Settings = nil
+---@class MenuUtilTable
+---@field CreateContextMenu fun(ownerRegion: Region|nil, generator: fun(ownerRegion: Region|nil, rootDescription: MenuDescriptionProxy)): any
+---@type MenuUtilTable
+MenuUtil = MenuUtil
 
----@type fun(frame: any)
-InterfaceOptions_AddCategory = nil
+---@class SettingsCategory
+---@field ID string|number|nil
 
----@type fun(scrollFrame: any): number
-FauxScrollFrame_GetOffset = nil
----@type fun(scrollFrame: any, numItems: number, numToDisplay: number, valueStep: number)
-FauxScrollFrame_Update = nil
----@type fun(scrollFrame: any, offset: number)
-FauxScrollFrame_SetOffset = nil
----@type fun(scrollFrame: any, offset: number, itemHeight: number, updateFunction: fun())
-FauxScrollFrame_OnVerticalScroll = nil
+---@class SettingsTable
+---@field RegisterCanvasLayoutCategory fun(frame: Frame, name: string): SettingsCategory
+---@field RegisterAddOnCategory fun(category: SettingsCategory)
+---@type SettingsTable
+Settings = Settings
+
+---@type fun(frame: Frame)
+InterfaceOptions_AddCategory = InterfaceOptions_AddCategory
+
+---@class ScrollFrame : Frame
+---@field offset number|nil
+
+---@type fun(scrollFrame: ScrollFrame): number
+FauxScrollFrame_GetOffset = FauxScrollFrame_GetOffset
+---@type fun(scrollFrame: ScrollFrame, numItems: number, numToDisplay: number, valueStep: number)
+FauxScrollFrame_Update = FauxScrollFrame_Update
+---@type fun(scrollFrame: ScrollFrame, offset: number)
+FauxScrollFrame_SetOffset = FauxScrollFrame_SetOffset
+---@type fun(scrollFrame: ScrollFrame, offset: number, itemHeight: number, updateFunction: fun())
+FauxScrollFrame_OnVerticalScroll = FauxScrollFrame_OnVerticalScroll
+
+---@class UICheckButton : CheckButton
+---@field Text FontString|nil
 
 -- Declare LibStub and libraries
 ---@class LibStub
@@ -75,7 +98,8 @@ function LibStub:__call(major) end
 
 ---@class C_Everywhere_Item
 ---@field GetItemInfo fun(item: string|number): string|nil, string|nil, number|nil, number|nil, number|nil, string|nil, string|nil, number|nil, string|nil, string|number|nil
----@field GetItemIcon fun(item: string|number): string|number|nil
+---@field GetItemIconByID fun(item: string|number): number|nil
+---@field GetItemIcon fun(itemLocation: table): number|nil
 
 ---@class C_Everywhere
 ---@field C_Item C_Everywhere_Item
@@ -94,8 +118,11 @@ function C_Everywhere.GetItemInfoInstant(item) end
 ---@return number itemStackCount
 function C_Everywhere.GetItemInfo(item) end
 ---@param item string|number
----@return string|number itemIcon
-function C_Everywhere.GetItemIcon(item) end
+---@return number|nil itemIcon
+function C_Everywhere.GetItemIconByID(item) end
+---@param itemLocation table
+---@return number|nil itemIcon
+function C_Everywhere.GetItemIcon(itemLocation) end
 
 ---@class LibItemMove
 ---@field Debug boolean|nil

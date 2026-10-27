@@ -1,19 +1,20 @@
 # Project Context: Bagnon Consolidator
 
-This document tracks the current plan, architectural decisions, and tasks for the
-Bagnon Consolidator addon.
+This document tracks the current plan, architectural decisions, and tasks for
+the Bagnon Consolidator addon.
 
 ## Architectural Decisions
 
 1. **Addon Style**: Developed as a self-contained addon named
    `Bagnon_Consolidator` located at the root of the repository.
 2. **UI Integration**: Implemented by hook-overriding
-   `Bagnon.Inventory.GetExtraButtons()` at runtime to insert a custom button into
-   the backpack frame.
-3. **Loading Manifest**: Uses `Bagnon_Consolidator.toc` to load `main.xml`, which
-   loads `libs/libItemMove/libItemMove.xml`, followed by modular scripts in
-   `core/` (`init.lua`, `utils.lua`, `snapshot.lua`, `engine.lua`) and `ui/`
-   (`button.lua`, `viewer.lua`, `options.lua`) in topological dependency order.
+   `Bagnon.Inventory.GetExtraButtons()` at runtime to insert a custom button
+   into the backpack frame.
+3. **Loading Manifest**: Uses `Bagnon_Consolidator.toc` to load `main.xml`,
+   which loads `libs/libItemMove/libItemMove.xml`, followed by modular
+   scripts in `core/` (`init.lua`, `utils.lua`, `snapshot.lua`, `engine.lua`)
+   and `ui/` (`button.lua`, `viewer.lua`, `options.lua`) in topological
+   dependency order.
 4. **Guild Bank Safeguard**: Skip items found in multiple guild bank tabs to
    preserve player categorization; flag under Conflicts.
 5. **Guild Bank Processing**: Processed tab-by-tab sequentially. Handled by
@@ -60,8 +61,8 @@ Bagnon Consolidator addon.
     `libs/AceLocale-3.0/` with base dictionary `locales/enUS.lua` (`isDefault =
     true`) and modular skeletons in `locales/` (`deDE`, `frFR`, `esES`, `esMX`,
     `ruRU`, `zhCN`, `zhTW`, `koKR`, `ptBR`, `itIT`).
-20. **CurseForge Packaging & CI/CD**: Uses `BigWigsMods/packager@v2` triggered on
-    Git release tags (e.g. `v1.0.0`) via `.github/workflows/release.yml`.
+20. **CurseForge Packaging & CI/CD**: Uses `BigWigsMods/packager@v2` triggered
+    on Git release tags (e.g. `v1.0.0`) via `.github/workflows/release.yml`.
     Dynamic version stamping is enabled with `## Version: @project-version@`,
     CurseForge project mapping via `## X-Curse-Project-ID: 1656218`, and
     packaging dependency management via `.pkgmeta`. Releases use
@@ -75,12 +76,24 @@ Bagnon Consolidator addon.
     snapshots, conflict detection, queue builders, and viewer operations.
 22. **Three-Pillar Validation & WoW Standards**:
     Adheres strictly to the Three-Pillar validation gate:
-    - *Pillar 1 (LuaLS)*: Type checking via `.luarc.json` and `types.lua`, eliminating dummy table clobbering.
-    - *Pillar 2 (wow_lua_lint)*: Zero-warning domain and taint linting across Retail, Mists of Pandaria Classic, and Classic Era flavors.
-    - *Pillar 3 (Manifest & Schema Integrity)*: Strict `wow_toc_validate` and `wow_xml_validate` compliance with schema namespace in `main.xml`.
-    - *Asset Resolution*: Uses numeric FileDataIDs (`135769`) for direct CASC texture lookups.
+    - *Pillar 1 (LuaLS)*: Type checking via `.luarc.json` and `types.lua`,
+      eliminating dummy table clobbering.
+    - *Pillar 2 (wow_lua_lint)*: Zero-warning domain and taint linting across
+      Retail, Mists of Pandaria Classic, and Classic Era flavors.
+    - *Pillar 3 (Manifest & Schema Integrity)*: Strict `wow_toc_validate` and
+      `wow_xml_validate` compliance with schema namespace in `main.xml`.
+    - *Asset Resolution*: Uses numeric FileDataIDs (`135769`, `134400`) for
+      direct CASC texture lookups with canonical inline comments.
     - *Docs Structure*: Standardized documentation in `docs/`.
-23. **WoW Forever & Multi-Client Support**: Supports Retail (Midnight 12.1, Interface 120100), Mists of Pandaria Classic (Interface 50504), Classic Era (Interface 11509), and WoW Forever (Project Camelot, Interface 16001). Generates `_Camelot.toc` via the BigWigs packager `Interface-Forever: 16001` directive.
+23. **WoW Forever & Multi-Client Support**: Supports Retail (Midnight 12.1,
+    Interface 120100), Mists of Pandaria Classic (Interface 50504), Classic
+    Era (Interface 11509), and WoW Forever (Project Camelot, Interface 16001).
+    Generates `_Camelot.toc` via the BigWigs packager `Interface-Forever: 16001`
+    directive.
+24. **Cross-Flavor Icon Resolution & Standard Templates**: Uses
+    `C.C_Item.GetItemIconByID` with numeric FileDataID `134400` fallback to
+    safely resolve uncached item icons across modern and Classic clients, and
+    inherits `UICheckButtonTemplate` for settings checkboxes.
 
 ## Completed Tasks
 
@@ -100,7 +113,7 @@ Bagnon Consolidator addon.
   (`.github/workflows/release.yml`).
 * Implemented Phase 1: Test-First Unit Testing Suite
   ([`tests/test_consolidator.lua`](../tests/test_consolidator.lua)) establishing
-  a 46-assertion baseline test suite against current business logic.
+  a baseline regression test suite against current business logic.
 * Implemented Phase 2: Modular Restructuring into `core/` and `ui/` packages
   with `git mv` history preservation and updated `main.xml` load order.
 * Implemented Phase 3: Manifests, CI Integration & Documentation updates
@@ -118,7 +131,13 @@ Bagnon Consolidator addon.
 * Fixed consolidate button and addon icon texture FileDataID from `135738`
   (`spell_arcane_manatap`) to `135769` (`spell_chargepositive`).
 * Updated `Bagnon_Consolidator.toc` and `libs/libItemMove` submodule (`e5390f8`)
-  for WoW Forever (Camelot, Interface 16001) and bumped Retail interface to 120100.
+  for WoW Forever (Camelot, Interface 16001) and bumped Retail interface to
+  120100.
+* Synchronized addon with Mists of Pandaria Classic (`50504`) and current
+  development rules: updated icon resolution to `C.C_Item.GetItemIconByID`,
+  migrated options CheckButton to `UICheckButtonTemplate`, typed `MenuUtil` and
+  `Settings` in `types.lua`, added typed parameters to `core/init.lua`, expanded
+  `luac -p` coverage in CI, and updated `.agents/` maintenance directives.
 
 ## Release Workflow Guide
 

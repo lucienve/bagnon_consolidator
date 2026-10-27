@@ -23,7 +23,7 @@ jobs:
           luaVersion: "5.1.5"
 
       - name: Run Syntax Check
-        run: luac -p core/*.lua ui/*.lua types.lua tests/test_consolidator.lua
+        run: luac -p core/*.lua ui/*.lua locales/*.lua scripts/dump_mappings.lua types.lua tests/test_consolidator.lua
 
       - name: Run Unit Tests
         run: lua tests/test_consolidator.lua

@@ -204,11 +204,12 @@ _G.LibStub = function(major)
 				GetItemInfo = function(id)
 					local entry = mockItemDB[id]
 					if entry then
-						return entry.name, "[" .. entry.name .. "]", 1, 1, 1, entry.itemType, entry.itemSubType, 20, "INV_Misc", "Interface/Icons/Item"
+						return entry.name, "[" .. entry.name .. "]", 1, 1, 1, entry.itemType, entry.itemSubType, 20, "INV_Misc", 134400
 					end
 					return nil
 				end,
-				GetItemIcon = function(id) return "Interface/Icons/Item" end,
+				GetItemIconByID = function(id) return 134400 end,
+				GetItemIcon = function(itemLoc) return 134400 end,
 			},
 			GetItemInfoInstant = function(id) return id end,
 			GetItemInfo = function(id)
@@ -216,7 +217,8 @@ _G.LibStub = function(major)
 				if entry then return entry.name, "[" .. entry.name .. "]" end
 				return nil
 			end,
-			GetItemIcon = function(id) return "Interface/Icons/Item" end,
+			GetItemIconByID = function(id) return 134400 end,
+			GetItemIcon = function(itemLoc) return 134400 end,
 		}
 	elseif major == 'LibItemMove-1.0' then
 		mockLibraries['LibItemMove-1.0'] = mockLibraries['LibItemMove-1.0'] or {
@@ -619,6 +621,7 @@ do
 	BagnonConsolidatorDB.personalBanks[charKey] = {
 		[2447] = "Peacebloom",
 		[765] = "Silverleaf",
+		[99999] = "Uncached Custom Item",
 	}
 	BagnonConsolidatorDB.ignored = {
 		[1710] = "Greater Healing Potion"

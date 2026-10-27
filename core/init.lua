@@ -12,6 +12,9 @@ Addon.L = L
 
 local loaderFrame = CreateFrame("Frame")
 loaderFrame:RegisterEvent("ADDON_LOADED")
+---@param self Frame
+---@param event "ADDON_LOADED"
+---@param name string
 loaderFrame:SetScript("OnEvent", function(self, event, name)
 	if name == "Bagnon_Consolidator" then
 		BagnonConsolidatorDB = BagnonConsolidatorDB or {}

@@ -276,16 +276,15 @@ function Viewer:Refresh()
 			local itemID = itemData.id
 			local itemName, itemLink, itemType, itemSubType, itemTexture
 			if C.C_Item and itemID then
-				local _, _, _, _, _, iType, iSubType, _, _, iTex = C.C_Item.GetItemInfo(itemID)
-				local iName, iLink = C.C_Item.GetItemInfo(itemID)
+				local iName, iLink, _, _, _, iType, iSubType, _, _, iTex = C.C_Item.GetItemInfo(itemID)
 				itemName = iName or itemData.name
 				itemLink = iLink
 				itemType = iType
 				itemSubType = iSubType
-				itemTexture = iTex or C.C_Item.GetItemIcon(itemID) or "Interface/Icons/INV_Misc_QuestionMark"
+				itemTexture = iTex or (C.C_Item.GetItemIconByID and C.C_Item.GetItemIconByID(itemID)) or 134400 -- FileDataID: inv_misc_questionmark
 			else
 				itemName = itemData.name
-				itemTexture = "Interface/Icons/INV_Misc_QuestionMark"
+				itemTexture = 134400 -- FileDataID: inv_misc_questionmark
 			end
 
 			row.icon:SetTexture(itemTexture)
