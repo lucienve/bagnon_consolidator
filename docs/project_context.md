@@ -185,6 +185,7 @@ the Bagnon Consolidator addon.
 - Registered `BagnonConsolidatorViewerFrame` in `UISpecialFrames` for `Escape`
   close support in `ui/viewer.lua` (PR `#20`).
 - Audited and updated project documentation and code comments for accuracy.
+- Prepared v1.2.0 minor release notes in `CHANGELOG.md`.
 
 ## Release Workflow Guide
 

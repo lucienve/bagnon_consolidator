@@ -1,5 +1,42 @@
 # Bagnon Consolidator Release Notes
 
+## v1.2.0
+
+### Bugfixes
+
+* **Character & Warband Bank Isolation:** Isolated Character Bank tabs from
+  Account/Warband Bank tabs during personal bank snapshots and added a
+  Character Bank availability check (`C_Bank.CanUseBank`) so remote
+  Warband-only bank access does not trigger failed deposits.
+* **Personal Bank Eligibility Filtering:** Pre-filters personal bank
+  consolidation queues via `C_Bank.IsItemAllowedInBankType` so bank-disallowed
+  items are skipped cleanly.
+* **Guild Bank Soulbound Filtering & Guards:** Excludes soulbound items from
+  Guild Bank consolidation queues and guards `GetGuildBankTabInfo` calls when
+  guild bank APIs are unavailable.
+* **Cross-Flavor Keyring Resolution:** Dynamically resolves the keyring
+  container from `Enum.BagIndex.Keyring` (falling back to `KEYRING_CONTAINER`
+  and `-2`), avoiding collisions with modern bank container indices.
+* **Safe Audio Playback:** Guards all `SOUNDKIT` playback across client flavors
+  and replaces raw sound ID `847` with `SOUNDKIT.IG_QUEST_CANCEL` (with
+  `IG_BACKPACK_CLOSE` fallback on completion).
+* **Mappings Viewer Reset Scope:** Fixed `Reset Mappings...` on the Conflicts
+  and Ignored tabs to pass the valid `"all"` reset scope.
+* **Mappings Viewer Escape Close:** Registered `BagnonConsolidatorViewerFrame`
+  in `UISpecialFrames` so pressing `Escape` closes the viewer cleanly.
+
+### Improvements
+
+* **Submodule Update:** Synced embedded `LibItemMove-1.0` submodule to
+  `b08f894`, resolving runtime taint from meta type files, WoW Forever 9-tab
+  bank/warbank container resolution, virtual bank tab family safety, Mists
+  warbank/guildbank guards, Reagent Bag family matching, negative item-link
+  IDs, sequential partial-stack accumulation, and full-stack/unstackable pickup
+  handling.
+* **Documentation & Testing:** Expanded the mock unit test suite to 256
+  assertions covering cross-flavor safeguards and updated player and developer
+  documentation for accuracy.
+
 ## v1.1.0
 
 ### Improvements
