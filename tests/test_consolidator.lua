@@ -637,4 +637,158 @@ do
 	print("[PASS] Test 10: Viewer Operations & Toggle State")
 end
 
+-- ----------------------------------------------------
+-- Test 11: Personal Bank Pre-Filtering (C_Bank.IsItemAllowedInBankType)
+-- ----------------------------------------------------
+do
+	local prevEnum = _G["Enum"]
+	local prevItemLocation = _G["ItemLocation"]
+	local prevCBank = _G["C_Bank"]
+
+	local allowedSlots = {}
+	local bankCheckCalls = 0
+	local checkedSlots = {}
+	local checkedBankTypes = {}
+
+	_G["Enum"] = {
+		BankType = {
+			Character = 0,
+			Guild = 1,
+			Account = 2,
+		}
+	} --[[@as any]]
+
+	_G["ItemLocation"] = {
+		CreateFromBagAndSlot = function(self, bag, slot)
+			return { bagID = bag, slotIndex = slot }
+		end
+	} --[[@as any]]
+
+	_G["C_Bank"] = {
+		IsItemAllowedInBankType = function(bankType, itemLocation)
+			bankCheckCalls = bankCheckCalls + 1
+			table.insert(checkedBankTypes, bankType)
+			local key = tostring(itemLocation.bagID) .. ":" .. tostring(itemLocation.slotIndex)
+			checkedSlots[key] = true
+			return allowedSlots[key] == true
+		end
+	} --[[@as any]]
+
+	local charKey = Addon.GetCharacterKey()
+	local guildKey = Addon.GetGuildKey()
+	assertTrue(charKey ~= nil, "charKey is valid for Test 11")
+	assertTrue(guildKey ~= nil, "guildKey is valid for Test 11")
+
+	if charKey then
+		BagnonConsolidatorDB.personalBanks[charKey] = {
+			[2447] = "Peacebloom",
+			[765] = "Silverleaf",
+		}
+	end
+	BagnonConsolidatorDB.ignored = {}
+	BagnonConsolidatorDB.conflicts = {}
+
+	local libItemMove = LibStub('LibItemMove-1.0') --[[@as MockLibItemMove]]
+
+	-- 11a: Mixed allowed and disallowed slots (including per-slot check on same itemID)
+	allowedSlots = {
+		["0:1"] = true,
+		["0:2"] = false,
+		["0:3"] = false,
+	}
+	mockInventorySlots = {
+		[0] = {
+			[1] = { itemID = 2447, stackCount = 5, hyperlink = "[Peacebloom]" },
+			[2] = { itemID = 2447, stackCount = 3, hyperlink = "[Peacebloom]" },
+			[3] = { itemID = 765, stackCount = 10, hyperlink = "[Silverleaf]" },
+			[4] = { itemID = 9999, stackCount = 2, hyperlink = "[Unmapped Item]" },
+		}
+	}
+	mockBankFrame.shown = true
+	mockGuildFrame.shown = false
+	libItemMove.lastMovedQueue = nil
+	libItemMove.lastContext = nil
+
+	Addon.ConsolidateEngine:Start(mockBankFrame)
+
+	assertEqual(libItemMove.lastContext, "BagToBank", "Test 11a personal bank context")
+	assertTrue(libItemMove.lastMovedQueue ~= nil, "Test 11a moveQueue dispatched")
+	if libItemMove.lastMovedQueue then
+		assertEqual(libItemMove.lastMovedQueue["2447"], 5, "Test 11a only allowed slot quantity queued for 2447")
+		assertEqual(libItemMove.lastMovedQueue["765"], nil, "Test 11a fully disallowed item 765 excluded")
+		assertEqual(libItemMove.lastMovedQueue["9999"], nil, "Test 11a unmapped item 9999 excluded")
+	end
+	assertEqual(bankCheckCalls, 3, "Test 11a checked exactly 3 mapped slots")
+	assertTrue(checkedSlots["0:1"] and checkedSlots["0:2"] and checkedSlots["0:3"], "Test 11a checked mapped slots")
+	assertEqual(checkedSlots["0:4"], nil, "Test 11a skipped C_Bank check for unmapped slot 0:4")
+	for _, bankType in ipairs(checkedBankTypes) do
+		assertEqual(bankType, 0, "Test 11a passed Enum.BankType.Character (0)")
+	end
+
+	-- 11b: All mapped slots disallowed -> skip LibItemMove:Move and print No items need consolidation
+	allowedSlots = {}
+	bankCheckCalls = 0
+	checkedSlots = {}
+	checkedBankTypes = {}
+	libItemMove.lastMovedQueue = nil
+	libItemMove.lastContext = nil
+
+	local chatMessages = (DEFAULT_CHAT_FRAME --[[@as { messages: string[] }]]).messages
+	local msgStart = #chatMessages
+
+	Addon.ConsolidateEngine:Start(mockBankFrame)
+
+	assertEqual(libItemMove.lastMovedQueue, nil, "Test 11b LibItemMove:Move not called when all mapped items disallowed")
+	assertEqual(libItemMove.lastContext, nil, "Test 11b context remains nil")
+	assertEqual(bankCheckCalls, 3, "Test 11b checked all 3 mapped slots")
+
+	local sawNoItems = false
+	local sawComplete = false
+	for i = msgStart + 1, #chatMessages do
+		if chatMessages[i]:find("No items need consolidation.", 1, true) then
+			sawNoItems = true
+		end
+		if chatMessages[i]:find("Consolidation complete.", 1, true) then
+			sawComplete = true
+		end
+	end
+	assertTrue(sawNoItems, "Test 11b reported No items need consolidation.")
+	assertFalse(sawComplete, "Test 11b did not report Consolidation complete.")
+
+	-- 11c: Guild bank consolidation unaffected even when Character Bank check returns false
+	if guildKey then
+		BagnonConsolidatorDB.guildTabs[guildKey] = {
+			[2589] = { tab = 1, name = "Linen Cloth" },
+		}
+	end
+	mockInventorySlots = {
+		[0] = {
+			[1] = { itemID = 2589, stackCount = 12, hyperlink = "[Linen Cloth]" },
+		}
+	}
+	mockBankFrame.shown = false
+	mockGuildFrame.shown = true
+	bankCheckCalls = 0
+	libItemMove.lastMovedQueue = nil
+	libItemMove.lastContext = nil
+
+	Addon.ConsolidateEngine:Start(mockGuildFrame)
+
+	assertEqual(libItemMove.lastContext, "BagToGuildBank", "Test 11c guild bank context unaffected")
+	assertTrue(libItemMove.lastMovedQueue ~= nil, "Test 11c guild moveQueue created")
+	if libItemMove.lastMovedQueue then
+		assertTrue(libItemMove.lastMovedQueue[1] ~= nil, "Test 11c Tab 1 queue exists")
+		if libItemMove.lastMovedQueue[1] then
+			assertEqual(libItemMove.lastMovedQueue[1]["2589"], 12, "Test 11c Linen Cloth queued for Tab 1")
+		end
+	end
+	assertEqual(bankCheckCalls, 0, "Test 11c guild bank did not call C_Bank.IsItemAllowedInBankType")
+
+	_G["C_Bank"] = prevCBank
+	_G["ItemLocation"] = prevItemLocation
+	_G["Enum"] = prevEnum
+
+	print("[PASS] Test 11: Personal Bank Pre-Filtering (C_Bank.IsItemAllowedInBankType)")
+end
+
 print(string.format("\n=== ALL %d UNIT TESTS PASSED SUCCESSFULLY! ===", numPassed))

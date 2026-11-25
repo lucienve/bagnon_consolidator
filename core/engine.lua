@@ -15,6 +15,20 @@ Addon.ConsolidateEngine = Engine
 
 local isConsolidating = false
 
+---@param bag number
+---@param slot number
+---@return boolean
+local function IsAllowedInCharacterBank(bag, slot)
+	if C_Bank and C_Bank.IsItemAllowedInBankType and ItemLocation and ItemLocation.CreateFromBagAndSlot then
+		local bankTypeCharacter = (Enum and Enum.BankType and Enum.BankType.Character) or 0
+		local itemLocation = ItemLocation:CreateFromBagAndSlot(bag, slot)
+		if itemLocation ~= nil then
+			return not not C_Bank.IsItemAllowedInBankType(bankTypeCharacter, itemLocation)
+		end
+	end
+	return true
+end
+
 function Engine:Start(frame)
 	if isConsolidating then
 		Addon.Print(L["Consolidation is already in progress."])
@@ -115,10 +129,14 @@ function Engine:Start(frame)
 					if item and item ~= Addon.None and item.itemID then
 						local id = item.itemID
 						if backpackMatches[id] then
-							local itemKey = tostring(id)
-							local count = item.stackCount or 1
-							moveQueue[itemKey] = (moveQueue[itemKey] or 0) + count
-							totalToMove = totalToMove + count
+							if IsAllowedInCharacterBank(bag, slot) then
+								local itemKey = tostring(id)
+								local count = item.stackCount or 1
+								moveQueue[itemKey] = (moveQueue[itemKey] or 0) + count
+								totalToMove = totalToMove + count
+							else
+								Addon.Debug("Skipping bank-disallowed item: " .. (item.hyperlink or tostring(id)))
+							end
 						end
 					end
 				end
