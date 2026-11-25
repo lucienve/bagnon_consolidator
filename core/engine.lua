@@ -38,6 +38,13 @@ local function CanUseCharacterBank()
 	return true
 end
 
+---@param soundID number|nil
+local function PlaySoundSafe(soundID)
+	if PlaySound and type(soundID) == "number" then
+		PlaySound(soundID)
+	end
+end
+
 function Engine:Start(frame)
 	if isConsolidating then
 		Addon.Print(L["Consolidation is already in progress."])
@@ -46,7 +53,7 @@ function Engine:Start(frame)
 
 	local isGuild = frame.id == 'guild'
 	if not isGuild and not CanUseCharacterBank() then
-		PlaySound(847)
+		PlaySoundSafe(SOUNDKIT and SOUNDKIT.IG_QUEST_CANCEL)
 		Addon.Print(L["Bank or Guild Bank must be open and active."])
 		return
 	end
@@ -172,17 +179,17 @@ function Engine:Start(frame)
 					Addon.Debug("Consolidated: " .. tostring(itemString) .. " (Qty: " .. tostring(qty) .. ")")
 				elseif event == "DONE" then
 					isConsolidating = false
-					PlaySound(SOUNDKIT.UI_BAG_SORTING_01)
+					PlaySoundSafe(SOUNDKIT and (SOUNDKIT.UI_BAG_SORTING_01 or SOUNDKIT.IG_BACKPACK_CLOSE))
 					Addon.Print(L["Consolidation complete."])
 				elseif event == "TIMEOUT_ERROR" or event == "CURSOR_LOCKED_ERROR" or event == "PERMISSION_ERROR" then
 					isConsolidating = false
-					PlaySound(847)
+					PlaySoundSafe(SOUNDKIT and SOUNDKIT.IG_QUEST_CANCEL)
 					Addon.Print(string.format(L["Consolidation stopped: %s"], tostring(event)))
 				end
 			end)
 		end
 	else
-		PlaySound(847)
+		PlaySoundSafe(SOUNDKIT and SOUNDKIT.IG_QUEST_CANCEL)
 		Addon.Print(L["No items need consolidation."])
 	end
 end

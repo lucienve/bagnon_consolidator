@@ -7,8 +7,10 @@
 DEFAULT_CHAT_FRAME = DEFAULT_CHAT_FRAME
 
 ---@class SoundKit
----@field UI_BAG_SORTING_01 number
----@type SoundKit
+---@field UI_BAG_SORTING_01 number|nil
+---@field IG_BACKPACK_CLOSE number|nil
+---@field IG_QUEST_CANCEL number|nil
+---@type SoundKit|nil
 SOUNDKIT = SOUNDKIT
 
 ---@type number

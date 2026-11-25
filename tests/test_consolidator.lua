@@ -49,10 +49,20 @@ _G.tinsert = table.insert
 _G.tremove = table.remove
 _G.KEYRING_CONTAINER = -2
 _G.MAX_GUILDBANK_TABS = 8
-_G.SOUNDKIT = { UI_BAG_SORTING_01 = 123 }
+_G.SOUNDKIT = {
+	UI_BAG_SORTING_01 = 43937,
+	IG_BACKPACK_CLOSE = 863,
+	IG_QUEST_CANCEL = 879,
+}
 _G.StaticPopupDialogs = {}
 _G.StaticPopup_Show = function(which, text1, text2, data) end
-_G.PlaySound = function(soundID) end
+local playedSounds = {}
+_G.PlaySound = function(soundID)
+	if type(soundID) ~= "number" then
+		error("bad argument #1 to 'PlaySound' (number expected, got " .. type(soundID) .. ")")
+	end
+	table.insert(playedSounds, soundID)
+end
 _G.InCombatLockdown = function() return false end
 
 _G.DEFAULT_CHAT_FRAME = {
@@ -1065,6 +1075,189 @@ do
 	_G["Enum"] = prevEnum
 
 	print("[PASS] Test 12: Character Bank vs Account/Warband Bank Isolation (#10)")
+end
+
+-- ----------------------------------------------------
+-- Test 13: Cross-Flavor SOUNDKIT Playback Guards & Fallbacks (#11)
+-- ----------------------------------------------------
+do
+	local prevSoundKit = _G["SOUNDKIT"]
+	local prevEnum = _G["Enum"]
+	local prevCBank = _G["C_Bank"]
+	local prevInventorySlots = mockInventorySlots
+	local prevBankShown = mockBankFrame.shown
+	local prevGuildShown = mockGuildFrame.shown
+
+	local charKey = Addon.GetCharacterKey()
+	assertTrue(charKey ~= nil, "charKey is valid for Test 13")
+
+	if charKey then
+		local prevPersonalBank = BagnonConsolidatorDB.personalBanks[charKey]
+		local prevConflicts = BagnonConsolidatorDB.conflicts
+		local prevIgnored = BagnonConsolidatorDB.ignored
+		local libItemMove = LibStub('LibItemMove-1.0') --[[@as MockLibItemMove]]
+		local origMove = libItemMove.Move
+		local chatMessages = (DEFAULT_CHAT_FRAME --[[@as { messages: string[] }]]).messages
+
+		local function hasChatMessageSince(startIdx, pattern)
+			for i = startIdx + 1, #chatMessages do
+				if chatMessages[i]:find(pattern, 1, true) then
+					return true
+				end
+			end
+			return false
+		end
+
+		BagnonConsolidatorDB.personalBanks[charKey] = {
+			[2447] = "Peacebloom",
+		}
+		BagnonConsolidatorDB.conflicts = {}
+		BagnonConsolidatorDB.ignored = {}
+		mockBankFrame.shown = true
+		mockGuildFrame.shown = false
+
+		-- 13a: DONE plays UI_BAG_SORTING_01 when present
+		_G["SOUNDKIT"] = {
+			UI_BAG_SORTING_01 = 43937,
+			IG_BACKPACK_CLOSE = 863,
+			IG_QUEST_CANCEL = 879,
+		}
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2447, stackCount = 5, hyperlink = "[Peacebloom]" },
+			},
+		}
+		local soundStart = #playedSounds
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertEqual(#playedSounds - soundStart, 1, "Test 13a played 1 sound on DONE")
+		assertEqual(playedSounds[soundStart + 1], 43937, "Test 13a played UI_BAG_SORTING_01")
+
+		-- 13b: DONE falls back to IG_BACKPACK_CLOSE when UI_BAG_SORTING_01 is nil
+		_G["SOUNDKIT"] = {
+			IG_BACKPACK_CLOSE = 863,
+			IG_QUEST_CANCEL = 879,
+		}
+		soundStart = #playedSounds
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertEqual(#playedSounds - soundStart, 1, "Test 13b played 1 sound on DONE fallback")
+		assertEqual(playedSounds[soundStart + 1], 863, "Test 13b fell back to IG_BACKPACK_CLOSE")
+
+		-- 13c: DONE with SOUNDKIT = {} and SOUNDKIT = nil no-ops safely and resets isConsolidating
+		for _, labelAndKit in ipairs({
+			{ label = "empty table", kit = {} },
+			{ label = "nil", kit = nil },
+		}) do
+			_G["SOUNDKIT"] = labelAndKit.kit
+			soundStart = #playedSounds
+			local msgStart = #chatMessages
+			Addon.ConsolidateEngine:Start(mockBankFrame)
+			assertEqual(#playedSounds - soundStart, 0, "Test 13c (" .. labelAndKit.label .. ") played 0 sounds on DONE")
+			assertTrue(hasChatMessageSince(msgStart, "Consolidation complete."), "Test 13c (" .. labelAndKit.label .. ") still printed completion message")
+
+			-- Verify isConsolidating reset behaviorally with a subsequent dispatch
+			_G["SOUNDKIT"] = { UI_BAG_SORTING_01 = 43937 }
+			libItemMove.lastMovedQueue = nil
+			msgStart = #chatMessages
+			Addon.ConsolidateEngine:Start(mockBankFrame)
+			assertTrue(libItemMove.lastMovedQueue ~= nil, "Test 13c (" .. labelAndKit.label .. ") subsequent run dispatched")
+			assertFalse(hasChatMessageSince(msgStart, "Consolidation is already in progress."), "Test 13c (" .. labelAndKit.label .. ") did not remain stuck consolidating")
+		end
+
+		-- 13d: Empty queue, TIMEOUT_ERROR, and unusable bank play IG_QUEST_CANCEL (not 847) and no-op when SOUNDKIT is {} or nil
+		-- 1) Empty queue
+		mockInventorySlots = { [0] = {} }
+		_G["SOUNDKIT"] = { IG_QUEST_CANCEL = 879 }
+		soundStart = #playedSounds
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertEqual(#playedSounds - soundStart, 1, "Test 13d empty queue played 1 sound")
+		assertEqual(playedSounds[soundStart + 1], 879, "Test 13d empty queue played IG_QUEST_CANCEL instead of 847")
+
+		_G["SOUNDKIT"] = {}
+		soundStart = #playedSounds
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertEqual(#playedSounds - soundStart, 0, "Test 13d empty queue with SOUNDKIT={} played 0 sounds")
+
+		_G["SOUNDKIT"] = nil
+		soundStart = #playedSounds
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertEqual(#playedSounds - soundStart, 0, "Test 13d empty queue with SOUNDKIT=nil played 0 sounds")
+
+		-- 2) TIMEOUT_ERROR callback
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2447, stackCount = 5, hyperlink = "[Peacebloom]" },
+			},
+		}
+		libItemMove.Move = function(self, queue, context, callback)
+			self.lastMovedQueue = queue
+			self.lastContext = context
+			if callback then
+				callback("TIMEOUT_ERROR")
+			end
+		end
+
+		_G["SOUNDKIT"] = { IG_QUEST_CANCEL = 879 }
+		soundStart = #playedSounds
+		local errMsgStart = #chatMessages
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertEqual(#playedSounds - soundStart, 1, "Test 13d TIMEOUT_ERROR played 1 sound")
+		assertEqual(playedSounds[soundStart + 1], 879, "Test 13d TIMEOUT_ERROR played IG_QUEST_CANCEL instead of 847")
+		assertTrue(hasChatMessageSince(errMsgStart, "TIMEOUT_ERROR"), "Test 13d TIMEOUT_ERROR printed stop message")
+
+		for _, labelAndKit in ipairs({
+			{ label = "empty table", kit = {} },
+			{ label = "nil", kit = nil },
+		}) do
+			_G["SOUNDKIT"] = labelAndKit.kit
+			soundStart = #playedSounds
+			Addon.ConsolidateEngine:Start(mockBankFrame)
+			assertEqual(#playedSounds - soundStart, 0, "Test 13d TIMEOUT_ERROR (" .. labelAndKit.label .. ") played 0 sounds")
+
+			-- Verify isConsolidating reset after error callback
+			libItemMove.lastMovedQueue = nil
+			errMsgStart = #chatMessages
+			Addon.ConsolidateEngine:Start(mockBankFrame)
+			assertTrue(libItemMove.lastMovedQueue ~= nil, "Test 13d TIMEOUT_ERROR (" .. labelAndKit.label .. ") subsequent run dispatched")
+			assertFalse(hasChatMessageSince(errMsgStart, "Consolidation is already in progress."), "Test 13d TIMEOUT_ERROR (" .. labelAndKit.label .. ") reset isConsolidating")
+		end
+
+		libItemMove.Move = origMove
+
+		-- 3) Unusable character bank (CanUseBank == false)
+		_G["Enum"] = { BankType = { Character = 0 } } --[[@as any]]
+		_G["C_Bank"] = {
+			CanUseBank = function() return false end,
+		} --[[@as any]]
+
+		_G["SOUNDKIT"] = { IG_QUEST_CANCEL = 879 }
+		soundStart = #playedSounds
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertEqual(#playedSounds - soundStart, 1, "Test 13d unusable bank played 1 sound")
+		assertEqual(playedSounds[soundStart + 1], 879, "Test 13d unusable bank played IG_QUEST_CANCEL instead of 847")
+
+		_G["SOUNDKIT"] = {}
+		soundStart = #playedSounds
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertEqual(#playedSounds - soundStart, 0, "Test 13d unusable bank with SOUNDKIT={} played 0 sounds")
+
+		_G["SOUNDKIT"] = nil
+		soundStart = #playedSounds
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertEqual(#playedSounds - soundStart, 0, "Test 13d unusable bank with SOUNDKIT=nil played 0 sounds")
+
+		BagnonConsolidatorDB.personalBanks[charKey] = prevPersonalBank
+		BagnonConsolidatorDB.conflicts = prevConflicts
+		BagnonConsolidatorDB.ignored = prevIgnored
+	end
+
+	mockGuildFrame.shown = prevGuildShown
+	mockBankFrame.shown = prevBankShown
+	mockInventorySlots = prevInventorySlots
+	_G["C_Bank"] = prevCBank
+	_G["Enum"] = prevEnum
+	_G["SOUNDKIT"] = prevSoundKit
+
+	print("[PASS] Test 13: Cross-Flavor SOUNDKIT Playback Guards & Fallbacks (#11)")
 end
 
 print(string.format("\n=== ALL %d UNIT TESTS PASSED SUCCESSFULLY! ===", numPassed))
