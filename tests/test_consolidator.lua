@@ -1260,4 +1260,191 @@ do
 	print("[PASS] Test 13: Cross-Flavor SOUNDKIT Playback Guards & Fallbacks (#11)")
 end
 
+-- ----------------------------------------------------
+-- Test 14: Cross-Flavor Keyring Container Resolution (#12)
+-- ----------------------------------------------------
+do
+	local prevKeyring = _G["KEYRING_CONTAINER"]
+	local prevEnum = _G["Enum"]
+	local prevCBank = _G["C_Bank"]
+	local prevInventoryBags = Addon.InventoryBags
+	local prevInventorySlots = mockInventorySlots
+	local prevBankShown = mockBankFrame.shown
+	local prevGuildShown = mockGuildFrame.shown
+
+	local charKey = Addon.GetCharacterKey()
+	local guildKey = Addon.GetGuildKey()
+	assertTrue(charKey ~= nil, "charKey is valid for Test 14")
+	assertTrue(guildKey ~= nil, "guildKey is valid for Test 14")
+
+	if charKey and guildKey then
+		local prevPersonalBank = BagnonConsolidatorDB.personalBanks[charKey]
+		local prevGuildTabs = BagnonConsolidatorDB.guildTabs[guildKey]
+		local prevConflicts = BagnonConsolidatorDB.conflicts
+		local prevIgnored = BagnonConsolidatorDB.ignored
+		local libItemMove = LibStub('LibItemMove-1.0') --[[@as MockLibItemMove]]
+
+		_G["C_Bank"] = nil
+		BagnonConsolidatorDB.personalBanks[charKey] = {
+			[2447] = "Peacebloom",
+		}
+		BagnonConsolidatorDB.guildTabs[guildKey] = {
+			[2589] = { tab = 1, name = "Linen Cloth" },
+		}
+		BagnonConsolidatorDB.conflicts = {}
+		BagnonConsolidatorDB.ignored = {}
+
+		-- 14a: Classic / Mists (KEYRING_CONTAINER = -2, Enum.BagIndex.Keyring = -2) skips bag -2
+		_G["KEYRING_CONTAINER"] = -2
+		_G["Enum"] = {
+			BagIndex = {
+				Keyring = -2,
+				Bank = -1,
+			},
+		} --[[@as any]]
+		Addon.InventoryBags = { 0, 1, 2, 3, 4, -2 }
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2447, stackCount = 5, hyperlink = "[Peacebloom]" },
+				[2] = { itemID = 2589, stackCount = 7, hyperlink = "[Linen Cloth]" },
+			},
+			[-2] = {
+				[1] = { itemID = 2447, stackCount = 20, hyperlink = "[Peacebloom]" },
+				[2] = { itemID = 2589, stackCount = 20, hyperlink = "[Linen Cloth]" },
+			},
+		}
+
+		mockBankFrame.shown = true
+		mockGuildFrame.shown = false
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertEqual(libItemMove.lastContext, "BagToBank", "Test 14a personal bank context")
+		assertTrue(libItemMove.lastMovedQueue ~= nil, "Test 14a personal moveQueue created")
+		if libItemMove.lastMovedQueue then
+			assertEqual(libItemMove.lastMovedQueue["2447"], 5, "Test 14a personal bank skipped keyring (-2)")
+		end
+
+		mockBankFrame.shown = false
+		mockGuildFrame.shown = true
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+		Addon.ConsolidateEngine:Start(mockGuildFrame)
+		assertEqual(libItemMove.lastContext, "BagToGuildBank", "Test 14a guild bank context")
+		assertTrue(libItemMove.lastMovedQueue ~= nil and libItemMove.lastMovedQueue[1] ~= nil, "Test 14a guild Tab 1 queue created")
+		if libItemMove.lastMovedQueue and libItemMove.lastMovedQueue[1] then
+			assertEqual(libItemMove.lastMovedQueue[1]["2589"], 7, "Test 14a guild bank skipped keyring (-2)")
+		end
+
+		-- 14b: Retail / Forever (KEYRING_CONTAINER = nil, Enum.BagIndex.Keyring = -1, Characterbanktab = -2)
+		_G["KEYRING_CONTAINER"] = nil
+		_G["Enum"] = {
+			BagIndex = {
+				Keyring = -1,
+				Characterbanktab = -2,
+			},
+		} --[[@as any]]
+		Addon.InventoryBags = { 0, 1, 2, 3, 4, -1, -2 }
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2447, stackCount = 5, hyperlink = "[Peacebloom]" },
+				[2] = { itemID = 2589, stackCount = 7, hyperlink = "[Linen Cloth]" },
+			},
+			[-1] = {
+				[1] = { itemID = 2447, stackCount = 20, hyperlink = "[Peacebloom]" },
+				[2] = { itemID = 2589, stackCount = 20, hyperlink = "[Linen Cloth]" },
+			},
+			[-2] = {
+				[1] = { itemID = 2447, stackCount = 3, hyperlink = "[Peacebloom]" },
+				[2] = { itemID = 2589, stackCount = 4, hyperlink = "[Linen Cloth]" },
+			},
+		}
+
+		mockBankFrame.shown = true
+		mockGuildFrame.shown = false
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertEqual(libItemMove.lastContext, "BagToBank", "Test 14b personal bank context")
+		assertTrue(libItemMove.lastMovedQueue ~= nil, "Test 14b personal moveQueue created")
+		if libItemMove.lastMovedQueue then
+			assertEqual(libItemMove.lastMovedQueue["2447"], 8, "Test 14b personal bank skipped -1 and kept -2")
+		end
+
+		mockBankFrame.shown = false
+		mockGuildFrame.shown = true
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+		Addon.ConsolidateEngine:Start(mockGuildFrame)
+		assertEqual(libItemMove.lastContext, "BagToGuildBank", "Test 14b guild bank context")
+		assertTrue(libItemMove.lastMovedQueue ~= nil and libItemMove.lastMovedQueue[1] ~= nil, "Test 14b guild Tab 1 queue created")
+		if libItemMove.lastMovedQueue and libItemMove.lastMovedQueue[1] then
+			assertEqual(libItemMove.lastMovedQueue[1]["2589"], 11, "Test 14b guild bank skipped -1 and kept -2")
+		end
+
+		-- Precedence check: Enum.BagIndex.Keyring (-1) still wins if stray global KEYRING_CONTAINER = -2 exists
+		_G["KEYRING_CONTAINER"] = -2
+		mockBankFrame.shown = true
+		mockGuildFrame.shown = false
+		libItemMove.lastMovedQueue = nil
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertTrue(libItemMove.lastMovedQueue ~= nil, "Test 14b precedence personal moveQueue created")
+		if libItemMove.lastMovedQueue then
+			assertEqual(libItemMove.lastMovedQueue["2447"], 8, "Test 14b Enum.BagIndex.Keyring takes precedence over stray KEYRING_CONTAINER")
+		end
+
+		-- 14c: Legacy Fallback (KEYRING_CONTAINER = nil, Enum = nil) falls back to -2
+		_G["KEYRING_CONTAINER"] = nil
+		_G["Enum"] = nil
+		Addon.InventoryBags = { 0, 1, 2, 3, 4, -2 }
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2447, stackCount = 5, hyperlink = "[Peacebloom]" },
+				[2] = { itemID = 2589, stackCount = 7, hyperlink = "[Linen Cloth]" },
+			},
+			[-2] = {
+				[1] = { itemID = 2447, stackCount = 20, hyperlink = "[Peacebloom]" },
+				[2] = { itemID = 2589, stackCount = 20, hyperlink = "[Linen Cloth]" },
+			},
+		}
+
+		mockBankFrame.shown = true
+		mockGuildFrame.shown = false
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+		assertEqual(libItemMove.lastContext, "BagToBank", "Test 14c personal bank context")
+		assertTrue(libItemMove.lastMovedQueue ~= nil, "Test 14c personal moveQueue created")
+		if libItemMove.lastMovedQueue then
+			assertEqual(libItemMove.lastMovedQueue["2447"], 5, "Test 14c personal bank fallback skipped -2")
+		end
+
+		mockBankFrame.shown = false
+		mockGuildFrame.shown = true
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+		Addon.ConsolidateEngine:Start(mockGuildFrame)
+		assertEqual(libItemMove.lastContext, "BagToGuildBank", "Test 14c guild bank context")
+		assertTrue(libItemMove.lastMovedQueue ~= nil and libItemMove.lastMovedQueue[1] ~= nil, "Test 14c guild Tab 1 queue created")
+		if libItemMove.lastMovedQueue and libItemMove.lastMovedQueue[1] then
+			assertEqual(libItemMove.lastMovedQueue[1]["2589"], 7, "Test 14c guild bank fallback skipped -2")
+		end
+
+		BagnonConsolidatorDB.personalBanks[charKey] = prevPersonalBank
+		BagnonConsolidatorDB.guildTabs[guildKey] = prevGuildTabs
+		BagnonConsolidatorDB.conflicts = prevConflicts
+		BagnonConsolidatorDB.ignored = prevIgnored
+	end
+
+	mockGuildFrame.shown = prevGuildShown
+	mockBankFrame.shown = prevBankShown
+	mockInventorySlots = prevInventorySlots
+	Addon.InventoryBags = prevInventoryBags
+	_G["C_Bank"] = prevCBank
+	_G["Enum"] = prevEnum
+	_G["KEYRING_CONTAINER"] = prevKeyring
+
+	print("[PASS] Test 14: Cross-Flavor Keyring Container Resolution (#12)")
+end
+
 print(string.format("\n=== ALL %d UNIT TESTS PASSED SUCCESSFULLY! ===", numPassed))
