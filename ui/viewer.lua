@@ -4,8 +4,8 @@
 	All Rights Reserved
 --]]
 
----@type string, BagnonAddon
-local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
+---@type BagnonAddon
+local Addon = _G[(...):match('[^_]+')]
 local C = LibStub('C_Everywhere') --[[@as C_Everywhere]]
 local L = Addon.L or LibStub('AceLocale-3.0'):GetLocale('Bagnon_Consolidator')
 local FauxScrollFrame_GetOffset = _G.FauxScrollFrame_GetOffset
@@ -23,15 +23,6 @@ local searchQuery = ""
 local itemRows = {}
 local MAX_ROWS = 7
 local ROW_HEIGHT = 42
-
-local function GetCurrentScope()
-	if activeTab == "guild" then
-		return (Addon.GetGuildKey and Addon.GetGuildKey()) or "guild"
-	elseif activeTab == "personal" then
-		return (Addon.GetCharacterKey and Addon.GetCharacterKey()) or "personal"
-	end
-	return "all"
-end
 
 local function GetCustomTabName(tabIdx)
 	local liveName = GetGuildBankTabInfo and GetGuildBankTabInfo(tabIdx)
@@ -88,8 +79,6 @@ local function GetItemsForCurrentView()
 						id = itemID,
 						name = itemName,
 						category = "personal",
-						destName = L["Personal Bank"],
-						count = 0,
 					})
 				end
 			end
@@ -111,42 +100,31 @@ local function GetItemsForCurrentView()
 							id = itemID,
 							name = itemName,
 							category = "guild",
-							tab = entry.tab,
-							destName = entry.tabName or GetTabDisplayName(entry.tab),
-							count = 0,
 						})
 					end
 				end
 			end
 		end
 	elseif activeTab == "conflicts" then
-		if BagnonConsolidatorDB.conflicts then
-			local function addConflicts(keyDict)
-				if not keyDict then return end
-				for itemID, conf in pairs(keyDict) do
-					local itemName = conf.name or string.format(L["Item %d"], itemID)
-					local match = true
-					if searchQuery ~= "" then
-						local lowerQuery = searchQuery:lower()
-						if not itemName:lower():find(lowerQuery, 1, true) and not tostring(itemID):find(lowerQuery, 1, true) then
-							match = false
-						end
-					end
-					if match then
-						tinsert(items, {
-							id = itemID,
-							name = itemName,
-							category = "conflicts",
-							reason = conf.reason or L["Multiple destinations"],
-							destName = L["Conflict (Go Nowhere)"],
-							count = 0,
-						})
+		if guildKey and BagnonConsolidatorDB.conflicts and BagnonConsolidatorDB.conflicts[guildKey] then
+			for itemID, conf in pairs(BagnonConsolidatorDB.conflicts[guildKey]) do
+				local itemName = conf.name or string.format(L["Item %d"], itemID)
+				local match = true
+				if searchQuery ~= "" then
+					local lowerQuery = searchQuery:lower()
+					if not itemName:lower():find(lowerQuery, 1, true) and not tostring(itemID):find(lowerQuery, 1, true) then
+						match = false
 					end
 				end
+				if match then
+					tinsert(items, {
+						id = itemID,
+						name = itemName,
+						category = "conflicts",
+						reason = conf.reason or L["Multiple destinations"],
+					})
+				end
 			end
-
-			if guildKey then addConflicts(BagnonConsolidatorDB.conflicts[guildKey]) end
-			if charKey then addConflicts(BagnonConsolidatorDB.conflicts[charKey]) end
 		end
 	elseif activeTab == "ignored" then
 		if BagnonConsolidatorDB.ignored then
@@ -163,8 +141,6 @@ local function GetItemsForCurrentView()
 						id = itemID,
 						name = itemName,
 						category = "ignored",
-						destName = L["Ignored (Never Deposit)"],
-						count = 0,
 					})
 				end
 			end
@@ -200,13 +176,8 @@ local function CountCategory(cat, tabIdx)
 			end
 		end
 	elseif cat == "conflicts" then
-		if BagnonConsolidatorDB.conflicts then
-			if guildKey and BagnonConsolidatorDB.conflicts[guildKey] then
-				for _ in pairs(BagnonConsolidatorDB.conflicts[guildKey]) do count = count + 1 end
-			end
-			if charKey and BagnonConsolidatorDB.conflicts[charKey] then
-				for _ in pairs(BagnonConsolidatorDB.conflicts[charKey]) do count = count + 1 end
-			end
+		if guildKey and BagnonConsolidatorDB.conflicts and BagnonConsolidatorDB.conflicts[guildKey] then
+			for _ in pairs(BagnonConsolidatorDB.conflicts[guildKey]) do count = count + 1 end
 		end
 	elseif cat == "ignored" then
 		if BagnonConsolidatorDB.ignored then
@@ -295,7 +266,7 @@ function Viewer:Refresh()
 				row.deleteBtn:SetText(L["Restore"])
 				row.icon:SetDesaturated(true)
 			elseif itemData.category == "conflicts" then
-				row.subText:SetText("|cffffcc00" .. string.format(L["Conflict: %s"], (itemData.reason or L["Multiple destinations"])) .. "|r")
+				row.subText:SetText("|cffffcc00" .. string.format(L["Conflict: %s"], itemData.reason) .. "|r")
 				row.deleteBtn:SetText(L["Clear"])
 				row.icon:SetDesaturated(false)
 			else
@@ -390,14 +361,12 @@ local function CreateViewerFrame()
 	local personalTab = CreateFrame("Button", nil, navContainer, "UIPanelButtonTemplate")
 	personalTab:SetSize(115, 22)
 	personalTab:SetPoint("LEFT", navContainer, "LEFT", 0, 0)
-	personalTab:SetText(L["Personal"])
 	personalTab:SetScript("OnClick", function() SelectTab("personal") end)
 	frame.personalTab = personalTab
 
 	local guildDropTab = CreateFrame("Button", nil, navContainer, "UIPanelButtonTemplate") --[[@as Button]]
 	guildDropTab:SetSize(125, 22)
 	guildDropTab:SetPoint("LEFT", personalTab, "RIGHT", 4, 0)
-	guildDropTab:SetText(L["Guild Bank >"])
 	guildDropTab:SetScript("OnClick", function()
 		MenuUtil.CreateContextMenu(guildDropTab, function(_, menu)
 			menu:SetTag("BagnonConsolidatorGuildTabs")
@@ -417,14 +386,12 @@ local function CreateViewerFrame()
 	local conflictsTab = CreateFrame("Button", nil, navContainer, "UIPanelButtonTemplate")
 	conflictsTab:SetSize(115, 22)
 	conflictsTab:SetPoint("LEFT", guildDropTab, "RIGHT", 4, 0)
-	conflictsTab:SetText(L["Conflicts"])
 	conflictsTab:SetScript("OnClick", function() SelectTab("conflicts") end)
 	frame.conflictsTab = conflictsTab
 
 	local ignoredTab = CreateFrame("Button", nil, navContainer, "UIPanelButtonTemplate")
 	ignoredTab:SetSize(115, 22)
 	ignoredTab:SetPoint("LEFT", conflictsTab, "RIGHT", 4, 0)
-	ignoredTab:SetText(L["Ignored"])
 	ignoredTab:SetScript("OnClick", function() SelectTab("ignored") end)
 	frame.ignoredTab = ignoredTab
 
@@ -452,7 +419,6 @@ local function CreateViewerFrame()
 
 	local countText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	countText:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20, -130)
-	countText:SetText(L["Showing 0 items"])
 	frame.itemCountText = countText
 
 	-- Scroll Frame
@@ -497,7 +463,6 @@ local function CreateViewerFrame()
 		local delBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
 		delBtn:SetSize(80, 22)
 		delBtn:SetPoint("RIGHT", row, "RIGHT", -6, 0)
-		delBtn:SetText(L["Remove"])
 		delBtn:SetScript("OnClick", function()
 			local data = row.itemData
 			if not data or not BagnonConsolidatorDB then return end
@@ -524,12 +489,8 @@ local function CreateViewerFrame()
 				Addon.Print(string.format(L["%s removed from Ignored list (can be re-learned on next snapshot)."], itemName))
 			elseif data.category == "conflicts" then
 				local guildKey = Addon.GetGuildKey and Addon.GetGuildKey()
-				local charKey = Addon.GetCharacterKey and Addon.GetCharacterKey()
 				if guildKey and BagnonConsolidatorDB.conflicts[guildKey] then
 					BagnonConsolidatorDB.conflicts[guildKey][itemID] = nil
-				end
-				if charKey and BagnonConsolidatorDB.conflicts[charKey] then
-					BagnonConsolidatorDB.conflicts[charKey][itemID] = nil
 				end
 				Addon.Print(string.format(L["%s conflict cleared."], itemName))
 			end
@@ -542,7 +503,6 @@ local function CreateViewerFrame()
 	end
 
 	frame:Hide()
-	return frame
 end
 
 function Viewer:Toggle()

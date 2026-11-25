@@ -3,7 +3,6 @@
 	Italian Translation
 --]]
 
-local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local L = LibStub("AceLocale-3.0"):NewLocale("Bagnon_Consolidator", "itIT")
 if not L then return end
 
@@ -49,14 +48,10 @@ L["Present on multiple Guild Bank tabs"] = "Presente su più schede della banca 
 L["Present in personal bank of %s"] = "Presente nella banca personale di %s"
 L["Item has conflicting destinations."] = "L'oggetto ha destinazioni contrastanti."
 L["Multiple destinations"] = "Destinazioni multiple"
-L["Conflict (Go Nowhere)"] = "Conflitto (Non spostare)"
-L["Ignored (Never Deposit)"] = "Ignorato (Non depositare mai)"
 L["%s: %s (Skipped)."] = "%s: %s (Saltato)."
-L["%s has conflicting destinations (Skipped)."] = "%s ha destinazioni contrastanti (Saltato)."
 
 -- Viewer & Management UI
 L["Bagnon Consolidator: Mappings"] = "Bagnon Consolidator: Mappature"
-L["Personal"] = "Personale"
 L["Guild Bank >"] = "Banca di gilda >"
 L["Select Guild Bank Tab"] = "Seleziona scheda banca di gilda"
 L["Tab %d"] = "Scheda %d"
@@ -66,8 +61,6 @@ L["Tab %d:"] = "Scheda %d:"
 L["Personal (%d)"] = "Personale (%d)"
 L["Conflicts (%d)"] = "Conflitti (%d)"
 L["Ignored (%d)"] = "Ignorati (%d)"
-L["Conflicts"] = "Conflitti"
-L["Ignored"] = "Ignorati"
 L["Personal Bank Header"] = "|cff82c5ffBanca personale:|r %s"
 L["Guild Bank Header Custom"] = "|cff82c5ffBanca di gilda:|r Scheda %d: %s"
 L["Guild Bank Header"] = "|cff82c5ffBanca di gilda:|r Scheda %d"
@@ -75,13 +68,11 @@ L["Conflicts Header"] = "|cffffcc00Conflitti:|r Oggetti con destinazioni multipl
 L["Ignored Header"] = "|cffff8888Ignorati:|r Oggetti esclusi dal consolidamento"
 L["Filter by name/ID"] = "Filtra per nome/ID"
 L["Showing %d items"] = "Visualizzazione di %d oggetti"
-L["Showing 0 items"] = "Visualizzazione di 0 oggetti"
 L["Ignored - will not consolidate"] = "Ignorato - non verrà consolidato"
 L["Conflict: %s"] = "Conflitto: %s"
 L["Restore"] = "Ripristina"
 L["Clear"] = "Cancella"
 L["Ignore [X]"] = "Ignora [X]"
-L["Remove"] = "Rimuovi"
 L["Item ID: %d"] = "ID oggetto: %d"
 L["Item %d"] = "Oggetto %d"
 L["%s moved to Ignored list."] = "%s spostato nella lista ignorati."

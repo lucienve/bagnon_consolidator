@@ -3,7 +3,6 @@
 	Default / Fallback Locale Dictionary
 --]]
 
-local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local L = LibStub("AceLocale-3.0"):NewLocale("Bagnon_Consolidator", "enUS", true)
 if not L then return end
 
@@ -49,14 +48,10 @@ L["Present on multiple Guild Bank tabs"] = true
 L["Present in personal bank of %s"] = true
 L["Item has conflicting destinations."] = true
 L["Multiple destinations"] = true
-L["Conflict (Go Nowhere)"] = true
-L["Ignored (Never Deposit)"] = true
 L["%s: %s (Skipped)."] = true
-L["%s has conflicting destinations (Skipped)."] = true
 
 -- Viewer & Management UI
 L["Bagnon Consolidator: Mappings"] = true
-L["Personal"] = true
 L["Guild Bank >"] = true
 L["Select Guild Bank Tab"] = true
 L["Tab %d"] = true
@@ -66,8 +61,6 @@ L["Tab %d:"] = true
 L["Personal (%d)"] = true
 L["Conflicts (%d)"] = true
 L["Ignored (%d)"] = true
-L["Conflicts"] = true
-L["Ignored"] = true
 L["Personal Bank Header"] = "|cff82c5ffPersonal Bank:|r %s"
 L["Guild Bank Header Custom"] = "|cff82c5ffGuild Bank:|r Tab %d: %s"
 L["Guild Bank Header"] = "|cff82c5ffGuild Bank:|r Tab %d"
@@ -75,13 +68,11 @@ L["Conflicts Header"] = "|cffffcc00Conflicts:|r Items with Multiple Destinations
 L["Ignored Header"] = "|cffff8888Ignored:|r Items Excluded from Consolidation"
 L["Filter by name/ID"] = true
 L["Showing %d items"] = true
-L["Showing 0 items"] = true
 L["Ignored - will not consolidate"] = true
 L["Conflict: %s"] = true
 L["Restore"] = true
 L["Clear"] = true
 L["Ignore [X]"] = true
-L["Remove"] = true
 L["Item ID: %d"] = true
 L["Item %d"] = true
 L["%s moved to Ignored list."] = true

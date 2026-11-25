@@ -189,6 +189,10 @@ the Bagnon Consolidator addon.
 - Updated Retail interface metadata in `Bagnon_Consolidator.toc`, synced
   `libs/libItemMove` submodule to `f54ac8e`, and prepared v1.2.1 patch release
   notes in `CHANGELOG.md`.
+- Audited and cleaned up dead code, unreachable `conflicts[charKey]` paths,
+  write-only fields, cascading unused locale keys, stale `types.lua` stubs,
+  stale test mocks, and obsolete `ADDON` namespace locals across `core/`,
+  `ui/`, `locales/`, `tests/`, `types.lua`, and `.agents/rules/`.
 
 ## Release Workflow Guide
 

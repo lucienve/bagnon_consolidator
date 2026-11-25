@@ -3,7 +3,6 @@
 	French Translation
 --]]
 
-local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local L = LibStub("AceLocale-3.0"):NewLocale("Bagnon_Consolidator", "frFR")
 if not L then return end
 
@@ -49,14 +48,10 @@ L["Present on multiple Guild Bank tabs"] = "Présent sur plusieurs onglets de la
 L["Present in personal bank of %s"] = "Présent dans la banque personnelle de %s"
 L["Item has conflicting destinations."] = "L'objet a des destinations conflictuelles."
 L["Multiple destinations"] = "Destinations multiples"
-L["Conflict (Go Nowhere)"] = "Conflit (Ne pas déposer)"
-L["Ignored (Never Deposit)"] = "Ignoré (Ne jamais déposer)"
 L["%s: %s (Skipped)."] = "%s : %s (Ignoré)."
-L["%s has conflicting destinations (Skipped)."] = "%s a des destinations conflictuelles (Ignoré)."
 
 -- Viewer & Management UI
 L["Bagnon Consolidator: Mappings"] = "Bagnon Consolidator : Correspondances"
-L["Personal"] = "Personnel"
 L["Guild Bank >"] = "Banque de guilde >"
 L["Select Guild Bank Tab"] = "Sélectionner l'onglet de banque de guilde"
 L["Tab %d"] = "Onglet %d"
@@ -66,8 +61,6 @@ L["Tab %d:"] = "Onglet %d :"
 L["Personal (%d)"] = "Personnel (%d)"
 L["Conflicts (%d)"] = "Conflits (%d)"
 L["Ignored (%d)"] = "Ignorés (%d)"
-L["Conflicts"] = "Conflits"
-L["Ignored"] = "Ignorés"
 L["Personal Bank Header"] = "|cff82c5ffBanque personnelle :|r %s"
 L["Guild Bank Header Custom"] = "|cff82c5ffBanque de guilde :|r Onglet %d : %s"
 L["Guild Bank Header"] = "|cff82c5ffBanque de guilde :|r Onglet %d"
@@ -75,13 +68,11 @@ L["Conflicts Header"] = "|cffffcc00Conflits :|r Objets avec plusieurs destinatio
 L["Ignored Header"] = "|cffff8888Ignorés :|r Objets exclus de la consolidation"
 L["Filter by name/ID"] = "Filtrer par nom/ID"
 L["Showing %d items"] = "Affichage de %d objets"
-L["Showing 0 items"] = "Affichage de 0 objets"
 L["Ignored - will not consolidate"] = "Ignoré - ne sera pas consolidé"
 L["Conflict: %s"] = "Conflit : %s"
 L["Restore"] = "Restaurer"
 L["Clear"] = "Effacer"
 L["Ignore [X]"] = "Ignorer [X]"
-L["Remove"] = "Supprimer"
 L["Item ID: %d"] = "ID de l'objet : %d"
 L["Item %d"] = "Objet %d"
 L["%s moved to Ignored list."] = "%s déplacé vers la liste des ignorés."

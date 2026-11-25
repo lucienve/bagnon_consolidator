@@ -27,8 +27,6 @@ UISpecialFrames = UISpecialFrames
 
 ---@class BagnonConsolidatorConflictEntry
 ---@field name string
----@field tabs number[]|nil
----@field personal boolean|nil
 ---@field reason string|nil
 
 ---@class BagnonConsolidatorDB
@@ -43,11 +41,6 @@ BagnonConsolidatorDB = BagnonConsolidatorDB
 
 ---@type (fun(tab: number): string|nil, string|nil, boolean|nil, boolean|nil, number|nil, number|nil)|nil
 GetGuildBankTabInfo = GetGuildBankTabInfo
-
----@type fun(bag: number, slot: number): string|nil, number|nil, boolean|nil, number|nil, boolean|nil, boolean|nil, string|nil, boolean|nil, boolean|nil, number|nil
-GetContainerItemInfo = GetContainerItemInfo
----@type fun(bag: number, slot: number)
-PickupContainerItem = PickupContainerItem
 
 ---@type table<string, table>
 StaticPopupDialogs = StaticPopupDialogs
@@ -103,30 +96,9 @@ function LibStub:__call(major) end
 ---@class C_Everywhere_Item
 ---@field GetItemInfo fun(item: string|number): string|nil, string|nil, number|nil, number|nil, number|nil, string|nil, string|nil, number|nil, string|nil, string|number|nil
 ---@field GetItemIconByID fun(item: string|number): number|nil
----@field GetItemIcon fun(itemLocation: table): number|nil
 
 ---@class C_Everywhere
 ---@field C_Item C_Everywhere_Item
-local C_Everywhere = {}
----@param item string
----@return number itemID
-function C_Everywhere.GetItemInfoInstant(item) end
----@param item string|number
----@return string itemName
----@return string itemLink
----@return number itemQuality
----@return number itemLevel
----@return number itemMinLevel
----@return string itemType
----@return string itemSubType
----@return number itemStackCount
-function C_Everywhere.GetItemInfo(item) end
----@param item string|number
----@return number|nil itemIcon
-function C_Everywhere.GetItemIconByID(item) end
----@param itemLocation table
----@return number|nil itemIcon
-function C_Everywhere.GetItemIcon(itemLocation) end
 
 ---@class LibItemMove
 ---@field Debug boolean|nil
@@ -157,8 +129,6 @@ function C_Everywhere.GetItemIcon(itemLocation) end
 ---@field GetItemName fun(item: any): string
 ---@field Print fun(msg: string)
 ---@field Debug fun(msg: string)
----@type BagnonAddon
-Bagnon = Bagnon
 
 ---@class BagnonTipped
 local BagnonTipped = {}
@@ -193,7 +163,6 @@ function BagnonFrames:IsShown(name) end
 
 ---@class BagnonFrame : Frame
 ---@field id string
----@field PickupItem fun(bagOrTab: number, slot: number)
 local BagnonFrame = {}
 ---@return boolean
 function BagnonFrame:IsShown() end
@@ -214,7 +183,6 @@ function BagnonFrame:GetBagInfo(tab) end
 function BagnonFrame:Super(class) end
 
 ---@class BagnonItemInfo
----@field isLocked boolean|nil
 ---@field isBound boolean|nil
 ---@field itemID number|nil
 ---@field stackCount number|nil

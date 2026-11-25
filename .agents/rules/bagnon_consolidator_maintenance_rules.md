@@ -58,7 +58,7 @@ All changes must strictly follow these formatting and registration guidelines:
   - Always extract the addon namespace at the top of the file:
 
     ```lua
-    local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
+    local Addon = _G[(...):match('[^_]+')]
     ```
 
 - **Multi-Expansion Compatibility**:

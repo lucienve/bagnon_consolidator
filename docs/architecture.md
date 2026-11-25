@@ -205,6 +205,5 @@ Persisted inside `BagnonConsolidatorDB`:
   `itemName`.
 * **`ignored`**: Set of `itemID` → `itemName` blacklisted from consolidation and
   snapshots.
-* **`conflicts`**: Maps `guildKey` or `charKey` → `itemID` →
-  `{ name, personal, tabs, reason }`.
+* **`conflicts`**: Maps `guildKey` → `itemID` → `{ name, reason }`.
 * **`enableDebug`**: Boolean flag for verbose debugging logs.

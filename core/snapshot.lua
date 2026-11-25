@@ -4,8 +4,8 @@
 	All Rights Reserved
 --]]
 
----@type string, BagnonAddon
-local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
+---@type BagnonAddon
+local Addon = _G[(...):match('[^_]+')]
 local L = Addon.L or LibStub('AceLocale-3.0'):GetLocale('Bagnon_Consolidator')
 local MAX_GUILDBANK_TABS = MAX_GUILDBANK_TABS or 8
 
@@ -43,9 +43,6 @@ local function ResetMappings(scope)
 		local charKey = Addon.GetCharacterKey and Addon.GetCharacterKey()
 		if charKey then
 			BagnonConsolidatorDB.personalBanks[charKey] = {}
-			if BagnonConsolidatorDB.conflicts then
-				BagnonConsolidatorDB.conflicts[charKey] = {}
-			end
 			Addon.Print(string.format(L["Reset all personal bank mappings for %s"], charKey))
 		end
 	elseif scope == "all" then
@@ -163,12 +160,8 @@ local function TakeSnapshot(targetFrame)
 				skippedIgnoredCount = skippedIgnoredCount + 1
 				Addon.Debug("Snapshot: Skipped ignored item " .. itemName .. " (" .. id .. ")")
 			elseif Addon.IsItemInAnyPersonalBank and Addon.IsItemInAnyPersonalBank(id) then
-				local tabList = {}
-				for t in pairs(tabs) do tinsert(tabList, t) end
 				BagnonConsolidatorDB.conflicts[guildKey][id] = {
 					name = itemName,
-					personal = true,
-					tabs = tabList,
 					reason = L["Present in both Personal Bank and Guild Bank"]
 				}
 				BagnonConsolidatorDB.guildTabs[guildKey][id] = nil
@@ -177,18 +170,14 @@ local function TakeSnapshot(targetFrame)
 			else
 				local tabCount = 0
 				local targetTab
-				local tabList = {}
 				for t in pairs(tabs) do
 					tabCount = tabCount + 1
 					targetTab = t
-					tinsert(tabList, t)
 				end
 
 				if tabCount > 1 then
 					BagnonConsolidatorDB.conflicts[guildKey][id] = {
 						name = itemName,
-						personal = false,
-						tabs = tabList,
 						reason = L["Present on multiple Guild Bank tabs"]
 					}
 					BagnonConsolidatorDB.guildTabs[guildKey][id] = nil
@@ -216,7 +205,6 @@ local function TakeSnapshot(targetFrame)
 		end
 
 		BagnonConsolidatorDB.personalBanks[charKey] = BagnonConsolidatorDB.personalBanks[charKey] or {}
-		BagnonConsolidatorDB.conflicts[charKey] = BagnonConsolidatorDB.conflicts[charKey] or {}
 
 		local mappedCount = 0
 		local skippedIgnoredCount = 0
@@ -249,7 +237,6 @@ local function TakeSnapshot(targetFrame)
 												BagnonConsolidatorDB.conflicts[gKey] = BagnonConsolidatorDB.conflicts[gKey] or {}
 												BagnonConsolidatorDB.conflicts[gKey][id] = {
 													name = itemName,
-													personal = true,
 													reason = string.format(L["Present in personal bank of %s"], tostring(charKey))
 												}
 											end

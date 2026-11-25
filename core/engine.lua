@@ -4,8 +4,8 @@
 	All Rights Reserved
 --]]
 
----@type string, BagnonAddon
-local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
+---@type BagnonAddon
+local Addon = _G[(...):match('[^_]+')]
 local LibItemMove = LibStub('LibItemMove-1.0') --[[@as LibItemMove]]
 local L = Addon.L or LibStub('AceLocale-3.0'):GetLocale('Bagnon_Consolidator')
 
@@ -131,17 +131,9 @@ function Engine:Start(frame)
 								end
 							end
 						else
-							if BagnonConsolidatorDB.conflicts and BagnonConsolidatorDB.conflicts[charKey] and BagnonConsolidatorDB.conflicts[charKey][id] then
-								if not warnedConflicts[id] then
-									warnedConflicts[id] = true
-									local link = item.hyperlink or ("item:" .. id)
-									Addon.Print(string.format(L["%s has conflicting destinations (Skipped)."], link))
-								end
-							else
-								local mapped = charKey and BagnonConsolidatorDB.personalBanks[charKey] and BagnonConsolidatorDB.personalBanks[charKey][id]
-								if mapped then
-									backpackMatches[id] = true
-								end
+							local mapped = charKey and BagnonConsolidatorDB.personalBanks[charKey] and BagnonConsolidatorDB.personalBanks[charKey][id]
+							if mapped then
+								backpackMatches[id] = true
 							end
 						end
 					end

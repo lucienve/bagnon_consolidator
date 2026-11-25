@@ -8,12 +8,10 @@
 --]]
 
 local numPassed = 0
-local numFailed = 0
 
 local function assertEqual(actual, expected, testName)
 	if actual ~= expected then
 		print(string.format("[FAIL] %s: Expected %s, got %s", testName, tostring(expected), tostring(actual)))
-		numFailed = numFailed + 1
 		error("Assertion failure in " .. testName)
 	else
 		numPassed = numPassed + 1
@@ -23,7 +21,6 @@ end
 local function assertTrue(condition, testName)
 	if not condition then
 		print(string.format("[FAIL] %s: Condition was false", testName))
-		numFailed = numFailed + 1
 		error("Assertion failure in " .. testName)
 	else
 		numPassed = numPassed + 1
@@ -33,7 +30,6 @@ end
 local function assertFalse(condition, testName)
 	if condition then
 		print(string.format("[FAIL] %s: Condition was true", testName))
-		numFailed = numFailed + 1
 		error("Assertion failure in " .. testName)
 	else
 		numPassed = numPassed + 1
@@ -49,7 +45,6 @@ local registeredEvents = {}
 local eventFrames = {}
 
 _G.tinsert = table.insert
-_G.tremove = table.remove
 _G.KEYRING_CONTAINER = -2
 _G.MAX_GUILDBANK_TABS = 8
 _G.SOUNDKIT = {
@@ -226,16 +221,7 @@ _G.LibStub = function(major)
 					return nil
 				end,
 				GetItemIconByID = function(id) return 134400 end,
-				GetItemIcon = function(itemLoc) return 134400 end,
 			},
-			GetItemInfoInstant = function(id) return id end,
-			GetItemInfo = function(id)
-				local entry = mockItemDB[id]
-				if entry then return entry.name, "[" .. entry.name .. "]" end
-				return nil
-			end,
-			GetItemIconByID = function(id) return 134400 end,
-			GetItemIcon = function(itemLoc) return 134400 end,
 		}
 	elseif major == 'LibItemMove-1.0' then
 		mockLibraries['LibItemMove-1.0'] = mockLibraries['LibItemMove-1.0'] or {
@@ -459,7 +445,7 @@ do
 
 	local guildKey = Addon.GetGuildKey()
 	assertTrue(BagnonConsolidatorDB.guildTabs[guildKey] ~= nil, "Guild bank entry exists")
-	
+
 	-- Linen Cloth mapped cleanly to Tab 1
 	local linenEntry = BagnonConsolidatorDB.guildTabs[guildKey][2589]
 	assertTrue(linenEntry ~= nil, "Linen cloth mapped")
@@ -470,7 +456,7 @@ do
 	assertEqual(ironEntry, nil, "Iron ore stripped from active guild tabs")
 	local ironConflict = BagnonConsolidatorDB.conflicts[guildKey][1205]
 	assertTrue(ironConflict ~= nil, "Iron ore recorded in conflicts")
-	assertEqual(ironConflict.personal, false, "Iron ore is multi-guild tab conflict")
+	assertEqual(ironConflict.reason, "Present on multiple Guild Bank tabs", "Iron ore is multi-guild tab conflict")
 
 	print("[PASS] Test 4: Guild Bank Snapshot Ingestion & Multi-Tab Conflict")
 end
@@ -479,7 +465,6 @@ end
 -- Test 5: Cross-Container Conflict Detection (Personal vs Guild)
 -- ----------------------------------------------------
 do
-	local charKey = Addon.GetCharacterKey()
 	local guildKey = Addon.GetGuildKey()
 
 	-- Peacebloom (2447) is in Personal Bank. Now present in Guild Tab 1.
@@ -495,7 +480,7 @@ do
 	assertEqual(BagnonConsolidatorDB.guildTabs[guildKey][2447], nil, "Peacebloom not mapped to guild tab due to conflict")
 	local pbConflict = BagnonConsolidatorDB.conflicts[guildKey][2447]
 	assertTrue(pbConflict ~= nil, "Peacebloom present in conflicts table")
-	assertEqual(pbConflict.personal, true, "Peacebloom marked as personal conflict")
+	assertEqual(pbConflict.reason, "Present in both Personal Bank and Guild Bank", "Peacebloom marked as personal vs guild conflict")
 
 	print("[PASS] Test 5: Cross-Container Personal vs Guild Bank Conflict")
 end
@@ -1003,15 +988,10 @@ do
 		} --[[@as any]]
 
 		BagnonConsolidatorDB.personalBanks[charKey] = { [2447] = "Peacebloom" }
-		BagnonConsolidatorDB.conflicts = {
-			[charKey] = {
-				[765] = { name = "Silverleaf" },
-			},
-		}
+		BagnonConsolidatorDB.conflicts = {}
 		mockInventorySlots = {
 			[0] = {
 				[1] = { itemID = 2447, stackCount = 5, hyperlink = "[Peacebloom]" },
-				[2] = { itemID = 765, stackCount = 2, hyperlink = "[Silverleaf]" },
 			},
 		}
 
@@ -1033,7 +1013,6 @@ do
 
 		local sawBankRequired = false
 		local sawNoItems = false
-		local sawConflict = false
 		for i = msgStart + 1, #chatMessages do
 			if chatMessages[i]:find("Bank or Guild Bank must be open and active.", 1, true) then
 				sawBankRequired = true
@@ -1041,13 +1020,9 @@ do
 			if chatMessages[i]:find("No items need consolidation.", 1, true) then
 				sawNoItems = true
 			end
-			if chatMessages[i]:find("conflicting destinations", 1, true) then
-				sawConflict = true
-			end
 		end
 		assertTrue(sawBankRequired, "Test 12d printed Bank or Guild Bank must be open and active.")
 		assertFalse(sawNoItems, "Test 12d did not emit No items need consolidation.")
-		assertFalse(sawConflict, "Test 12d did not emit conflict warnings before aborting")
 
 		-- Guild Bank remains unaffected and does not call C_Bank.CanUseBank
 		canUseCalls = 0
@@ -1739,10 +1714,7 @@ do
 			}
 			BagnonConsolidatorDB.conflicts = {
 				[guildKey] = {
-					[1205] = { name = "Iron Ore", personal = false, tabs = { 2, 3 }, reason = "Present on multiple Guild Bank tabs" },
-				},
-				[charKey] = {
-					[765] = { name = "Silverleaf", personal = true, reason = "Multiple destinations" },
+					[1205] = { name = "Iron Ore", reason = "Present on multiple Guild Bank tabs" },
 				},
 			}
 		end
@@ -1794,7 +1766,7 @@ do
 		assertTrue(next(BagnonConsolidatorDB.ignored) == nil, "Test 16b ignored cleared")
 		assertTrue(next(BagnonConsolidatorDB.conflicts) == nil, "Test 16b conflicts cleared")
 
-		-- 16c: Personal tab passes scope "personal" and clears only personal mappings/conflicts
+		-- 16c: Personal tab passes scope "personal" and clears only personal mappings
 		seedDB()
 		lastPopup = nil
 		viewerFrame.personalTab:GetScript("OnClick")()
@@ -1808,7 +1780,6 @@ do
 		end
 		acceptLastPopup()
 		assertTrue(next(BagnonConsolidatorDB.personalBanks[charKey]) == nil, "Test 16c personalBanks[charKey] cleared")
-		assertTrue(next(BagnonConsolidatorDB.conflicts[charKey]) == nil, "Test 16c conflicts[charKey] cleared")
 		assertTrue(BagnonConsolidatorDB.guildTabs[guildKey] ~= nil and BagnonConsolidatorDB.guildTabs[guildKey][2589] ~= nil, "Test 16c guildTabs preserved")
 		assertTrue(BagnonConsolidatorDB.conflicts[guildKey] ~= nil and BagnonConsolidatorDB.conflicts[guildKey][1205] ~= nil, "Test 16c guild conflicts preserved")
 		assertTrue(BagnonConsolidatorDB.ignored[1710] ~= nil, "Test 16c ignored preserved")
@@ -1853,7 +1824,6 @@ do
 		assertTrue(next(BagnonConsolidatorDB.guildTabs[guildKey]) == nil, "Test 16d guildTabs[guildKey] cleared")
 		assertTrue(next(BagnonConsolidatorDB.conflicts[guildKey]) == nil, "Test 16d conflicts[guildKey] cleared")
 		assertTrue(BagnonConsolidatorDB.personalBanks[charKey] ~= nil and BagnonConsolidatorDB.personalBanks[charKey][2447] ~= nil, "Test 16d personalBanks preserved")
-		assertTrue(BagnonConsolidatorDB.conflicts[charKey] ~= nil and BagnonConsolidatorDB.conflicts[charKey][765] ~= nil, "Test 16d personal conflicts preserved")
 		assertTrue(BagnonConsolidatorDB.ignored[1710] ~= nil, "Test 16d ignored preserved")
 
 		-- Teardown: restore default tab, viewer visibility, mocks, and DB tables

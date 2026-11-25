@@ -4,8 +4,8 @@
 	All Rights Reserved
 --]]
 
----@type string, BagnonAddon
-local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
+---@type BagnonAddon
+local Addon = _G[(...):match('[^_]+')]
 local L = Addon.L or LibStub('AceLocale-3.0'):GetLocale('Bagnon_Consolidator')
 
 -- Register Addon Options in Blizzard Settings Panel (with legacy InterfaceOptions fallback)

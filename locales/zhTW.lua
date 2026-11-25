@@ -3,7 +3,6 @@
 	Traditional Chinese Translation
 --]]
 
-local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local L = LibStub("AceLocale-3.0"):NewLocale("Bagnon_Consolidator", "zhTW")
 if not L then return end
 
@@ -49,14 +48,10 @@ L["Present on multiple Guild Bank tabs"] = "存在於多個公會銀行標籤頁
 L["Present in personal bank of %s"] = "存在於 %s 的個人銀行中"
 L["Item has conflicting destinations."] = "物品存在衝突的目的地。"
 L["Multiple destinations"] = "多個目的地"
-L["Conflict (Go Nowhere)"] = "衝突（不移動）"
-L["Ignored (Never Deposit)"] = "已忽略（從不存入）"
 L["%s: %s (Skipped)."] = "%s：%s（已略過）。"
-L["%s has conflicting destinations (Skipped)."] = "%s 存在衝突的目的地（已略過）。"
 
 -- Viewer & Management UI
 L["Bagnon Consolidator: Mappings"] = "Bagnon Consolidator：對應"
-L["Personal"] = "個人"
 L["Guild Bank >"] = "公會銀行 >"
 L["Select Guild Bank Tab"] = "選擇公會銀行標籤頁"
 L["Tab %d"] = "標籤 %d"
@@ -66,8 +61,6 @@ L["Tab %d:"] = "標籤 %d："
 L["Personal (%d)"] = "個人 (%d)"
 L["Conflicts (%d)"] = "衝突 (%d)"
 L["Ignored (%d)"] = "已忽略 (%d)"
-L["Conflicts"] = "衝突"
-L["Ignored"] = "已忽略"
 L["Personal Bank Header"] = "|cff82c5ff個人銀行：|r %s"
 L["Guild Bank Header Custom"] = "|cff82c5ff公會銀行：|r 標籤 %d：%s"
 L["Guild Bank Header"] = "|cff82c5ff公會銀行：|r 標籤 %d"
@@ -75,13 +68,11 @@ L["Conflicts Header"] = "|cffffcc00衝突：|r 擁有多個目的地的物品（
 L["Ignored Header"] = "|cffff8888已忽略：|r 排除在整合之外的物品"
 L["Filter by name/ID"] = "依名稱/ID過濾"
 L["Showing %d items"] = "顯示 %d 個物品"
-L["Showing 0 items"] = "顯示 0 個物品"
 L["Ignored - will not consolidate"] = "已忽略 - 不會整合"
 L["Conflict: %s"] = "衝突：%s"
 L["Restore"] = "復原"
 L["Clear"] = "清除"
 L["Ignore [X]"] = "忽略 [X]"
-L["Remove"] = "移除"
 L["Item ID: %d"] = "物品 ID：%d"
 L["Item %d"] = "物品 %d"
 L["%s moved to Ignored list."] = "%s 已移至忽略清單。"

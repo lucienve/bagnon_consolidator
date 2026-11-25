@@ -3,7 +3,6 @@
 	Korean Translation
 --]]
 
-local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local L = LibStub("AceLocale-3.0"):NewLocale("Bagnon_Consolidator", "koKR")
 if not L then return end
 
@@ -49,14 +48,10 @@ L["Present on multiple Guild Bank tabs"] = "여러 길드 은행 탭에 존재�
 L["Present in personal bank of %s"] = "%s의 개인 은행에 존재함"
 L["Item has conflicting destinations."] = "아이템에 상충하는 목적지가 있습니다."
 L["Multiple destinations"] = "여러 목적지"
-L["Conflict (Go Nowhere)"] = "충돌 (이동하지 않음)"
-L["Ignored (Never Deposit)"] = "무시됨 (입고 안 함)"
 L["%s: %s (Skipped)."] = "%s: %s (건너뜀)."
-L["%s has conflicting destinations (Skipped)."] = "%s에 상충하는 목적지가 있습니다 (건너뜀)."
 
 -- Viewer & Management UI
 L["Bagnon Consolidator: Mappings"] = "Bagnon Consolidator: 매핑"
-L["Personal"] = "개인"
 L["Guild Bank >"] = "길드 은행 >"
 L["Select Guild Bank Tab"] = "길드 은행 탭 선택"
 L["Tab %d"] = "탭 %d"
@@ -66,8 +61,6 @@ L["Tab %d:"] = "탭 %d:"
 L["Personal (%d)"] = "개인 (%d)"
 L["Conflicts (%d)"] = "충돌 (%d)"
 L["Ignored (%d)"] = "무시됨 (%d)"
-L["Conflicts"] = "충돌"
-L["Ignored"] = "무시됨"
 L["Personal Bank Header"] = "|cff82c5ff개인 은행:|r %s"
 L["Guild Bank Header Custom"] = "|cff82c5ff길드 은행:|r 탭 %d: %s"
 L["Guild Bank Header"] = "|cff82c5ff길드 은행:|r 탭 %d"
@@ -75,13 +68,11 @@ L["Conflicts Header"] = "|cffffcc00충돌:|r 여러 목적지가 있는 아이�
 L["Ignored Header"] = "|cffff8888무시됨:|r 통합에서 제외된 아이템"
 L["Filter by name/ID"] = "이름/ID로 필터링"
 L["Showing %d items"] = "아이템 %d개 표시 중"
-L["Showing 0 items"] = "아이템 0개 표시 중"
 L["Ignored - will not consolidate"] = "무시됨 - 통합되지 않음"
 L["Conflict: %s"] = "충돌: %s"
 L["Restore"] = "복원"
 L["Clear"] = "삭제"
 L["Ignore [X]"] = "무시 [X]"
-L["Remove"] = "제거"
 L["Item ID: %d"] = "아이템 ID: %d"
 L["Item %d"] = "아이템 %d"
 L["%s moved to Ignored list."] = "%s|1이;가; 무시 목록으로 이동되었습니다."

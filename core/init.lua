@@ -4,8 +4,8 @@
 	All Rights Reserved
 --]]
 
----@type string, BagnonAddon
-local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
+---@type BagnonAddon
+local Addon = _G[(...):match('[^_]+')]
 local LibItemMove = LibStub('LibItemMove-1.0') --[[@as LibItemMove]]
 local L = LibStub('AceLocale-3.0'):GetLocale('Bagnon_Consolidator')
 Addon.L = L
