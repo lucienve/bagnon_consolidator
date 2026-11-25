@@ -97,49 +97,49 @@ the Bagnon Consolidator addon.
 
 ## Completed Tasks
 
-* Implemented the Snapshot & Viewer Frame architecture with additive merge
+- Implemented the Snapshot & Viewer Frame architecture with additive merge
   engine.
-* Added `BagnonConsolidatorViewer` modal window with destination tabs, search
+- Added `BagnonConsolidatorViewer` modal window with destination tabs, search
   filtering, and per-item removal/ignore controls.
-* Integrated right-click context menu options (*Take Snapshot*, *Reset
+- Integrated right-click context menu options (*Take Snapshot*, *Reset
   Mappings...*, *Open Mappings Viewer...*, *Enable Debug Logs*).
-* Added confirmation dialog (`StaticPopup`) for resetting mappings.
-* Updated CLI helper `scripts/dump_mappings.lua` to display ignored items and
+- Added confirmation dialog (`StaticPopup`) for resetting mappings.
+- Updated CLI helper `scripts/dump_mappings.lua` to display ignored items and
   conflicts.
-* Integrated `AceLocale-3.0` localization framework across all UI text,
+- Integrated `AceLocale-3.0` localization framework across all UI text,
   dialogs, tooltips, and notification messages.
-* Configured automated CurseForge packaging pipeline with `.pkgmeta`, TOC
+- Configured automated CurseForge packaging pipeline with `.pkgmeta`, TOC
   metadata (`X-Curse-Project-ID: 1656218`), and gated release workflow
   (`.github/workflows/release.yml`).
-* Implemented Phase 1: Test-First Unit Testing Suite
+- Implemented Phase 1: Test-First Unit Testing Suite
   ([`tests/test_consolidator.lua`](../tests/test_consolidator.lua)) establishing
   a baseline regression test suite against current business logic.
-* Implemented Phase 2: Modular Restructuring into `core/` and `ui/` packages
+- Implemented Phase 2: Modular Restructuring into `core/` and `ui/` packages
   with `git mv` history preservation and updated `main.xml` load order.
-* Implemented Phase 3: Manifests, CI Integration & Documentation updates
+- Implemented Phase 3: Manifests, CI Integration & Documentation updates
   (added unit testing and syntax checks to GitHub Actions workflow, updated
   `.pkgmeta` ignore rules, and refreshed architectural documentation).
-* Synchronized addon with updated WoW addon development rules, Three-Pillar
+- Synchronized addon with updated WoW addon development rules, Three-Pillar
   validation gates (`wow_xml_validate`, `wow_toc_validate`, `wow_lua_lint`,
   `lua-language-server`), type definitions in `types.lua`, numeric FileDataID
   texture resolution in `ui/button.lua`, and migrated `doc/` to `docs/`.
-* Updated `Bagnon_Consolidator.toc` with missing packager flavor directive
+- Updated `Bagnon_Consolidator.toc` with missing packager flavor directive
   (`Interface-Mists`), pruned retired expansions (Cataclysm, Wrath, BCC), and
   converted `IconTexture` to numeric FileDataID `135738`.
-* Updated `libs/libItemMove` submodule reference to `2813b54` containing Retail
+- Updated `libs/libItemMove` submodule reference to `2813b54` containing Retail
   11.0/12.0 container resolution enhancements and cleanups.
-* Fixed consolidate button and addon icon texture FileDataID from `135738`
+- Fixed consolidate button and addon icon texture FileDataID from `135738`
   (`spell_arcane_manatap`) to `135769` (`spell_chargepositive`).
-* Updated `Bagnon_Consolidator.toc` and `libs/libItemMove` submodule (`e5390f8`)
+- Updated `Bagnon_Consolidator.toc` and `libs/libItemMove` submodule (`e5390f8`)
   for WoW Forever (Camelot, Interface 16001) and bumped Retail interface to
   120100.
-* Synchronized addon with Mists of Pandaria Classic (`50504`) and current
+- Synchronized addon with Mists of Pandaria Classic (`50504`) and current
   development rules: updated icon resolution to `C.C_Item.GetItemIconByID`,
   migrated options CheckButton to `UICheckButtonTemplate`, typed `MenuUtil` and
   `Settings` in `types.lua`, added typed parameters to `core/init.lua`, expanded
   `luac -p` coverage in CI, and updated `.agents/` maintenance directives.
-* Prepared v1.1.0 minor release notes in `CHANGELOG.md`.
-* Updated `libs/libItemMove` submodule to `41d3be8`, resolving runtime taint
+- Prepared v1.1.0 minor release notes in `CHANGELOG.md`.
+- Updated `libs/libItemMove` submodule to `41d3be8`, resolving runtime taint
   from `core/types.lua` (Bagnon Consolidator `#7` / `libItemMove#4`) and WoW
   Forever 9-tab bank/warbank container IDs (Bagnon Consolidator `#8` /
   `libItemMove#2`), plus virtual bank tab family safety (`libItemMove#3`),

@@ -49,9 +49,11 @@ All changes must strictly follow these formatting and registration guidelines:
 
 - **Namespace Access**:
   - Always extract the addon namespace at the top of the file:
+
     ```lua
     local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
     ```
+
 - **Multi-Expansion Compatibility**:
   - Always use `LibStub('C_Everywhere')` to bridge expansion API differences
     (e.g. `C.C_Item.GetItemInfo`, `C.C_Item.GetItemIconByID`).
@@ -70,9 +72,11 @@ All changes must strictly follow these formatting and registration guidelines:
 
 - Inherit from the Bagnon base component library classes using the
   `Addon.Tipped:NewClass` framework (or other suitable Bagnon class engines):
+
   ```lua
   local ConsolidateButton = Addon.Tipped:NewClass('ConsolidateButton', 'Button', 'BagnonButtonTemplate')
   ```
+
 - Invoke parent/superclass methods via `self:Super(ClassName):MethodName(...)`.
 
 ### Asynchronous Consolidation Engine & Movement Delegation
@@ -94,9 +98,11 @@ All changes must strictly follow these formatting and registration guidelines:
 All changes must pass the three-pillar quality verification gate before staging:
 
 - **Static Type Checking (Pillar 1)**: Run LuaLS across the codebase:
+
   ```bash
   lua-language-server --check . --checklevel=Warning
   ```
+
 - **WoW Domain & Taint Linting (Pillar 2)**:
   Run `wow_lua_lint` across all target client flavors (`mainline`, `mists`,
   `vanilla`, `forever`) to guarantee zero execution taint, no secure frame
@@ -106,17 +112,22 @@ All changes must pass the three-pillar quality verification gate before staging:
   - Run `wow_toc_validate` on `Bagnon_Consolidator.toc`.
   - Run `wow_xml_validate` on `main.xml` and `locales/locales.xml`.
   - Run `luac -p` on all Lua scripts:
+
     ```bash
     luac -p core/*.lua ui/*.lua locales/*.lua scripts/dump_mappings.lua types.lua tests/test_consolidator.lua
     ```
+
 - **Automated Unit Testing**: Execute the mock regression test suite:
+
   ```bash
   lua tests/test_consolidator.lua
   ```
+
 - **In-Game Verification**: Verify UI frame rendering, button placement,
   viewer navigation, and item movements inside the World of Warcraft client.
 - **Error Display**: Ensure WoW script error displays are enabled during
   development:
+
   ```text
   /console scriptErrors 1
   ```
