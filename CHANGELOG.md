@@ -1,5 +1,15 @@
 # Bagnon Consolidator Release Notes
 
+## v1.2.1
+
+### Improvements
+
+* **Retail Interface Update:** Updated Retail interface metadata to `120105`
+  (Midnight 12.1.5).
+* **Submodule Update:** Updated embedded `LibItemMove-1.0` submodule to
+  `f54ac8e`, removing unused symbols, shadowed context methods, and unreachable
+  guards.
+
 ## v1.2.0
 
 ### Bugfixes

@@ -186,6 +186,9 @@ the Bagnon Consolidator addon.
   close support in `ui/viewer.lua` (PR `#20`).
 - Audited and updated project documentation and code comments for accuracy.
 - Prepared v1.2.0 minor release notes in `CHANGELOG.md`.
+- Updated Retail interface metadata in `Bagnon_Consolidator.toc`, synced
+  `libs/libItemMove` submodule to `f54ac8e`, and prepared v1.2.1 patch release
+  notes in `CHANGELOG.md`.
 
 ## Release Workflow Guide
 
