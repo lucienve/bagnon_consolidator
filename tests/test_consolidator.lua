@@ -1669,4 +1669,201 @@ do
 	print("[PASS] Test 15: Guild Bank Soulbound Filtering & GetGuildBankTabInfo Guards (#13)")
 end
 
+-- ----------------------------------------------------
+-- Test 16: Viewer Reset Mappings Scope Across All Tabs (#3)
+-- ----------------------------------------------------
+do
+	local prevStaticPopupShow = _G["StaticPopup_Show"]
+	local prevMenuUtil = _G["MenuUtil"]
+	local prevPersonalBanks = BagnonConsolidatorDB.personalBanks
+	local prevGuildTabs = BagnonConsolidatorDB.guildTabs
+	local prevIgnored = BagnonConsolidatorDB.ignored
+	local prevConflicts = BagnonConsolidatorDB.conflicts
+
+	local charKey = Addon.GetCharacterKey()
+	local guildKey = Addon.GetGuildKey()
+	assertTrue(charKey ~= nil, "charKey is valid for Test 16")
+	assertTrue(guildKey ~= nil, "guildKey is valid for Test 16")
+
+	---@type any
+	local viewerFrame
+	---@type any
+	local resetBtn
+	for _, f in ipairs(eventFrames) do
+		if f.name == "BagnonConsolidatorViewerFrame" then
+			viewerFrame = f
+		elseif f.text == "Reset Mappings..." then
+			resetBtn = f
+		end
+	end
+
+	assertTrue(viewerFrame ~= nil, "Test 16 located BagnonConsolidatorViewerFrame")
+	assertTrue(resetBtn ~= nil, "Test 16 located Reset Mappings button")
+
+	if viewerFrame and resetBtn and charKey and guildKey then
+		local wasShown = viewerFrame:IsShown()
+		if not wasShown then
+			Addon.Viewer:Toggle()
+		end
+
+		local lastPopup
+		_G["StaticPopup_Show"] = function(which, text1, text2, data)
+			lastPopup = {
+				which = which,
+				text1 = text1,
+				text2 = text2,
+				data = data,
+			}
+		end
+
+		local function seedDB()
+			BagnonConsolidatorDB.guildTabs = {
+				[guildKey] = {
+					[2589] = { tab = 1, name = "Linen Cloth" },
+				},
+			}
+			BagnonConsolidatorDB.personalBanks = {
+				[charKey] = {
+					[2447] = "Peacebloom",
+				},
+			}
+			BagnonConsolidatorDB.ignored = {
+				[1710] = "Greater Healing Potion",
+			}
+			BagnonConsolidatorDB.conflicts = {
+				[guildKey] = {
+					[1205] = { name = "Iron Ore", personal = false, tabs = { 2, 3 }, reason = "Present on multiple Guild Bank tabs" },
+				},
+				[charKey] = {
+					[765] = { name = "Silverleaf", personal = true, reason = "Multiple destinations" },
+				},
+			}
+		end
+
+		local function acceptLastPopup()
+			assertTrue(lastPopup ~= nil, "Test 16 StaticPopup_Show was invoked")
+			if lastPopup then
+				local dialog = StaticPopupDialogs[lastPopup.which]
+				assertTrue(dialog ~= nil and type(dialog.OnAccept) == "function", "Test 16 dialog OnAccept exists")
+				if dialog and dialog.OnAccept then
+					dialog.OnAccept(nil, lastPopup.data)
+				end
+			end
+		end
+
+		-- 16a: Conflicts tab passes scope "all" and clears all DB tables
+		seedDB()
+		lastPopup = nil
+		viewerFrame.conflictsTab:GetScript("OnClick")()
+		resetBtn:GetScript("OnClick")()
+		assertTrue(lastPopup ~= nil, "Test 16a popup shown on Conflicts tab")
+		if lastPopup then
+			assertEqual(lastPopup.which, "BAGNON_CONSOLIDATOR_RESET_CONFIRM", "Test 16a popup id")
+			assertEqual(lastPopup.text1, "All Addon Data", "Test 16a popup label")
+			assertEqual(lastPopup.text2, nil, "Test 16a popup text2")
+			assertEqual(lastPopup.data, "all", "Test 16a popup scope is all")
+		end
+		acceptLastPopup()
+		assertTrue(next(BagnonConsolidatorDB.guildTabs) == nil, "Test 16a guildTabs cleared")
+		assertTrue(next(BagnonConsolidatorDB.personalBanks) == nil, "Test 16a personalBanks cleared")
+		assertTrue(next(BagnonConsolidatorDB.ignored) == nil, "Test 16a ignored cleared")
+		assertTrue(next(BagnonConsolidatorDB.conflicts) == nil, "Test 16a conflicts cleared")
+
+		-- 16b: Ignored tab passes scope "all" and clears all DB tables
+		seedDB()
+		lastPopup = nil
+		viewerFrame.ignoredTab:GetScript("OnClick")()
+		resetBtn:GetScript("OnClick")()
+		assertTrue(lastPopup ~= nil, "Test 16b popup shown on Ignored tab")
+		if lastPopup then
+			assertEqual(lastPopup.which, "BAGNON_CONSOLIDATOR_RESET_CONFIRM", "Test 16b popup id")
+			assertEqual(lastPopup.text1, "All Addon Data", "Test 16b popup label")
+			assertEqual(lastPopup.text2, nil, "Test 16b popup text2")
+			assertEqual(lastPopup.data, "all", "Test 16b popup scope is all")
+		end
+		acceptLastPopup()
+		assertTrue(next(BagnonConsolidatorDB.guildTabs) == nil, "Test 16b guildTabs cleared")
+		assertTrue(next(BagnonConsolidatorDB.personalBanks) == nil, "Test 16b personalBanks cleared")
+		assertTrue(next(BagnonConsolidatorDB.ignored) == nil, "Test 16b ignored cleared")
+		assertTrue(next(BagnonConsolidatorDB.conflicts) == nil, "Test 16b conflicts cleared")
+
+		-- 16c: Personal tab passes scope "personal" and clears only personal mappings/conflicts
+		seedDB()
+		lastPopup = nil
+		viewerFrame.personalTab:GetScript("OnClick")()
+		resetBtn:GetScript("OnClick")()
+		assertTrue(lastPopup ~= nil, "Test 16c popup shown on Personal tab")
+		if lastPopup then
+			assertEqual(lastPopup.which, "BAGNON_CONSOLIDATOR_RESET_CONFIRM", "Test 16c popup id")
+			assertEqual(lastPopup.text1, charKey, "Test 16c popup label is charKey")
+			assertEqual(lastPopup.text2, nil, "Test 16c popup text2")
+			assertEqual(lastPopup.data, "personal", "Test 16c popup scope is personal")
+		end
+		acceptLastPopup()
+		assertTrue(next(BagnonConsolidatorDB.personalBanks[charKey]) == nil, "Test 16c personalBanks[charKey] cleared")
+		assertTrue(next(BagnonConsolidatorDB.conflicts[charKey]) == nil, "Test 16c conflicts[charKey] cleared")
+		assertTrue(BagnonConsolidatorDB.guildTabs[guildKey] ~= nil and BagnonConsolidatorDB.guildTabs[guildKey][2589] ~= nil, "Test 16c guildTabs preserved")
+		assertTrue(BagnonConsolidatorDB.conflicts[guildKey] ~= nil and BagnonConsolidatorDB.conflicts[guildKey][1205] ~= nil, "Test 16c guild conflicts preserved")
+		assertTrue(BagnonConsolidatorDB.ignored[1710] ~= nil, "Test 16c ignored preserved")
+
+		-- 16d: Guild tab passes scope "guild" and clears only guild mappings/conflicts
+		seedDB()
+		lastPopup = nil
+		local menuButtons = {}
+		_G["MenuUtil"] = {
+			CreateContextMenu = function(parent, callback)
+				local menu = {
+					SetTag = function(self, tag) end,
+					CreateTitle = function(self, title) end,
+					CreateButton = function(self, text, fn)
+						table.insert(menuButtons, { text = text, fn = fn })
+					end,
+					CreateDivider = function(self) end,
+					CreateCheckbox = function(self, text, getFn, setFn) end,
+				}
+				if callback then
+					callback(parent, menu)
+				end
+			end,
+		} --[[@as any]]
+
+		viewerFrame.guildDropTab:GetScript("OnClick")()
+		assertTrue(#menuButtons >= 1 and type(menuButtons[1].fn) == "function", "Test 16d captured guild tab menu buttons")
+		if menuButtons[1] and menuButtons[1].fn then
+			menuButtons[1].fn()
+		end
+		assertEqual(viewerFrame.guildDropTab:GetText(), "Tab 1 >", "Test 16d switched to Guild Tab 1")
+
+		resetBtn:GetScript("OnClick")()
+		assertTrue(lastPopup ~= nil, "Test 16d popup shown on Guild tab")
+		if lastPopup then
+			assertEqual(lastPopup.which, "BAGNON_CONSOLIDATOR_RESET_CONFIRM", "Test 16d popup id")
+			assertEqual(lastPopup.text1, guildKey, "Test 16d popup label is guildKey")
+			assertEqual(lastPopup.text2, nil, "Test 16d popup text2")
+			assertEqual(lastPopup.data, "guild", "Test 16d popup scope is guild")
+		end
+		acceptLastPopup()
+		assertTrue(next(BagnonConsolidatorDB.guildTabs[guildKey]) == nil, "Test 16d guildTabs[guildKey] cleared")
+		assertTrue(next(BagnonConsolidatorDB.conflicts[guildKey]) == nil, "Test 16d conflicts[guildKey] cleared")
+		assertTrue(BagnonConsolidatorDB.personalBanks[charKey] ~= nil and BagnonConsolidatorDB.personalBanks[charKey][2447] ~= nil, "Test 16d personalBanks preserved")
+		assertTrue(BagnonConsolidatorDB.conflicts[charKey] ~= nil and BagnonConsolidatorDB.conflicts[charKey][765] ~= nil, "Test 16d personal conflicts preserved")
+		assertTrue(BagnonConsolidatorDB.ignored[1710] ~= nil, "Test 16d ignored preserved")
+
+		-- Teardown: restore default tab, viewer visibility, mocks, and DB tables
+		viewerFrame.personalTab:GetScript("OnClick")()
+		if not wasShown and viewerFrame:IsShown() then
+			Addon.Viewer:Toggle()
+		end
+	end
+
+	BagnonConsolidatorDB.conflicts = prevConflicts
+	BagnonConsolidatorDB.ignored = prevIgnored
+	BagnonConsolidatorDB.guildTabs = prevGuildTabs
+	BagnonConsolidatorDB.personalBanks = prevPersonalBanks
+	_G["MenuUtil"] = prevMenuUtil
+	_G["StaticPopup_Show"] = prevStaticPopupShow
+
+	print("[PASS] Test 16: Viewer Reset Mappings Scope Across All Tabs (#3)")
+end
+
 print(string.format("\n=== ALL %d UNIT TESTS PASSED SUCCESSFULLY! ===", numPassed))
