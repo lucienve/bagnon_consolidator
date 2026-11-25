@@ -140,3 +140,20 @@ All changes must pass the three-pillar quality verification gate before staging:
   ```text
   /console scriptErrors 1
   ```
+
+---
+
+## 4. Documentation Guidelines
+
+- **`README.md` (End-User Audience):** Write for World of Warcraft players, not
+  developers. Keep content brief, informative, and focused on user-visible
+  features, installation, and in-game usage. Do not reference internal function
+  names, WoW API identifiers, Git submodules, or developer jargon. Avoid
+  hardcoding exact WoW flavor interface or revision numbers.
+- **`docs/` (Developer Audience):** Keep technical architecture, SavedVariables
+  schemas, and API integration details in `docs/architecture.md` and
+  `docs/project_context.md`. Avoid hardcoding mutable WoW flavor interface or
+  revision numbers; treat `Bagnon_Consolidator.toc` as the single source of
+  truth.
+- **`CHANGELOG.md` (Append-Only Reference):** Treat historical release notes as
+  append-only; do not rewrite past entries.
