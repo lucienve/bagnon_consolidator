@@ -1447,4 +1447,226 @@ do
 	print("[PASS] Test 14: Cross-Flavor Keyring Container Resolution (#12)")
 end
 
+-- ----------------------------------------------------
+-- Test 15: Guild Bank Soulbound Filtering & GetGuildBankTabInfo Guards (#13)
+-- ----------------------------------------------------
+do
+	local prevCContainer = _G["C_Container"]
+	local prevGetGuildBankTabInfo = _G["GetGuildBankTabInfo"]
+	local prevCBank = _G["C_Bank"]
+	local prevInventorySlots = mockInventorySlots
+	local prevGuildBagInfo = mockGuildBagInfo
+	local prevBankShown = mockBankFrame.shown
+	local prevGuildShown = mockGuildFrame.shown
+
+	local charKey = Addon.GetCharacterKey()
+	local guildKey = Addon.GetGuildKey()
+	assertTrue(charKey ~= nil, "charKey is valid for Test 15")
+	assertTrue(guildKey ~= nil, "guildKey is valid for Test 15")
+
+	if charKey and guildKey then
+		local prevPersonalBanks = BagnonConsolidatorDB.personalBanks
+		local prevGuildTabs = BagnonConsolidatorDB.guildTabs
+		local prevTabNames = BagnonConsolidatorDB.tabNames
+		local prevConflicts = BagnonConsolidatorDB.conflicts
+		local prevIgnored = BagnonConsolidatorDB.ignored
+		local libItemMove = LibStub('LibItemMove-1.0') --[[@as MockLibItemMove]]
+		local chatMessages = (DEFAULT_CHAT_FRAME --[[@as { messages: string[] }]]).messages
+
+		local function hasChatMessageSince(startIdx, pattern)
+			for i = startIdx + 1, #chatMessages do
+				if chatMessages[i]:find(pattern, 1, true) then
+					return true
+				end
+			end
+			return false
+		end
+
+		_G["C_Bank"] = nil
+		BagnonConsolidatorDB.personalBanks = {}
+		BagnonConsolidatorDB.guildTabs = {
+			[guildKey] = {
+				[2589] = { tab = 1, name = "Linen Cloth" }, -- Tab 1 has canDeposit = true
+				[1710] = { tab = 3, name = "Greater Healing Potion" }, -- Tab 3 has canDeposit = false
+			},
+		}
+		BagnonConsolidatorDB.conflicts = {}
+		BagnonConsolidatorDB.ignored = {}
+
+		-- 15a: All matching items soulbound via item.isBound = true -> skip Move and print No items need consolidation.
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2589, stackCount = 5, hyperlink = "[Linen Cloth]", isBound = true },
+			},
+		}
+		mockBankFrame.shown = false
+		mockGuildFrame.shown = true
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+
+		local soundStart = #playedSounds
+		local msgStart = #chatMessages
+		Addon.ConsolidateEngine:Start(mockGuildFrame)
+
+		assertEqual(libItemMove.lastMovedQueue, nil, "Test 15a LibItemMove:Move not called when all items soulbound")
+		assertEqual(libItemMove.lastContext, nil, "Test 15a context remains nil")
+		assertEqual(#playedSounds - soundStart, 1, "Test 15a played 1 cancel sound")
+		assertEqual(playedSounds[soundStart + 1], 879, "Test 15a played IG_QUEST_CANCEL")
+		assertTrue(hasChatMessageSince(msgStart, "No items need consolidation."), "Test 15a printed No items need consolidation.")
+		assertFalse(hasChatMessageSince(msgStart, "Consolidation complete."), "Test 15a did not print Consolidation complete.")
+
+		-- 15b: Mixed soulbound and unbound stacks -> only unbound queued; unmapped/non-depositable skip C_Container
+		local containerInfoCalls = 0
+		_G["C_Container"] = {
+			GetContainerItemInfo = function(bag, slot)
+				containerInfoCalls = containerInfoCalls + 1
+				return nil
+			end,
+		} --[[@as any]]
+
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2589, stackCount = 5, hyperlink = "[Linen Cloth]", isBound = true },
+				[2] = { itemID = 2589, stackCount = 10, hyperlink = "[Linen Cloth]", isBound = false },
+				[3] = { itemID = 9999, stackCount = 1, hyperlink = "[Unmapped Item]" },
+				[4] = { itemID = 1710, stackCount = 2, hyperlink = "[Greater Healing Potion]" },
+			},
+		}
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+		Addon.ConsolidateEngine:Start(mockGuildFrame)
+
+		assertEqual(libItemMove.lastContext, "BagToGuildBank", "Test 15b guild bank context")
+		assertTrue(libItemMove.lastMovedQueue ~= nil and libItemMove.lastMovedQueue[1] ~= nil, "Test 15b Tab 1 queue created")
+		if libItemMove.lastMovedQueue and libItemMove.lastMovedQueue[1] then
+			assertEqual(libItemMove.lastMovedQueue[1]["2589"], 10, "Test 15b queued only unbound stack quantity")
+		end
+		assertEqual(libItemMove.lastMovedQueue and libItemMove.lastMovedQueue[3], nil, "Test 15b Tab 3 excluded")
+		assertEqual(containerInfoCalls, 0, "Test 15b skipped C_Container fallback for explicit isBound and unmapped/non-depositable slots")
+
+		-- 15c: C_Container.GetContainerItemInfo fallback when item.isBound is nil
+		local checkedFallbackSlots = {}
+		local fallbackBoundMap = {
+			["0:1"] = { isBound = true },
+			["0:2"] = { isBound = false },
+			["0:3"] = nil,
+		}
+		containerInfoCalls = 0
+		_G["C_Container"] = {
+			GetContainerItemInfo = function(bag, slot)
+				containerInfoCalls = containerInfoCalls + 1
+				local key = tostring(bag) .. ":" .. tostring(slot)
+				checkedFallbackSlots[key] = true
+				return fallbackBoundMap[key]
+			end,
+		} --[[@as any]]
+
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2589, stackCount = 4, hyperlink = "[Linen Cloth]" },
+				[2] = { itemID = 2589, stackCount = 6, hyperlink = "[Linen Cloth]" },
+				[3] = { itemID = 2589, stackCount = 3, hyperlink = "[Linen Cloth]" },
+				[4] = { itemID = 2589, stackCount = 2, hyperlink = "[Linen Cloth]", isBound = false },
+			},
+		}
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+		Addon.ConsolidateEngine:Start(mockGuildFrame)
+
+		assertEqual(libItemMove.lastContext, "BagToGuildBank", "Test 15c fallback guild context")
+		assertTrue(libItemMove.lastMovedQueue ~= nil and libItemMove.lastMovedQueue[1] ~= nil, "Test 15c Tab 1 queue created")
+		if libItemMove.lastMovedQueue and libItemMove.lastMovedQueue[1] then
+			assertEqual(libItemMove.lastMovedQueue[1]["2589"], 11, "Test 15c queued unbound fallback, nil fallback, and explicit unbound slots")
+		end
+		assertEqual(containerInfoCalls, 3, "Test 15c consulted C_Container.GetContainerItemInfo only for nil isBound slots")
+		assertTrue(checkedFallbackSlots["0:1"] and checkedFallbackSlots["0:2"] and checkedFallbackSlots["0:3"], "Test 15c checked slots 1-3")
+		assertEqual(checkedFallbackSlots["0:4"], nil, "Test 15c did not consult C_Container for explicit isBound=false slot 4")
+
+		-- C_Container == nil with item.isBound == nil defaults to unbound without error
+		_G["C_Container"] = nil
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2589, stackCount = 7, hyperlink = "[Linen Cloth]" },
+			},
+		}
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+		Addon.ConsolidateEngine:Start(mockGuildFrame)
+		assertEqual(libItemMove.lastContext, "BagToGuildBank", "Test 15c nil C_Container guild context")
+		assertTrue(libItemMove.lastMovedQueue ~= nil and libItemMove.lastMovedQueue[1] ~= nil, "Test 15c nil C_Container Tab 1 queue created")
+		if libItemMove.lastMovedQueue and libItemMove.lastMovedQueue[1] then
+			assertEqual(libItemMove.lastMovedQueue[1]["2589"], 7, "Test 15c nil C_Container defaults to unbound")
+		end
+
+		-- 15d: Personal Bank consolidation still queues soulbound items normally
+		BagnonConsolidatorDB.personalBanks[charKey] = {
+			[2447] = "Peacebloom",
+		}
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2447, stackCount = 6, hyperlink = "[Peacebloom]", isBound = true },
+			},
+		}
+		mockBankFrame.shown = true
+		mockGuildFrame.shown = false
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+
+		assertEqual(libItemMove.lastContext, "BagToBank", "Test 15d personal bank context")
+		assertTrue(libItemMove.lastMovedQueue ~= nil, "Test 15d personal moveQueue created")
+		if libItemMove.lastMovedQueue then
+			assertEqual(libItemMove.lastMovedQueue["2447"], 6, "Test 15d personal bank still queues soulbound items")
+		end
+
+		-- 15e: GetGuildBankTabInfo == nil guards in Engine:Start and TakeSnapshot
+		_G["GetGuildBankTabInfo"] = nil
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2589, stackCount = 10, hyperlink = "[Linen Cloth]", isBound = false },
+			},
+		}
+		mockBankFrame.shown = false
+		mockGuildFrame.shown = true
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+		msgStart = #chatMessages
+		Addon.ConsolidateEngine:Start(mockGuildFrame)
+
+		assertEqual(libItemMove.lastMovedQueue, nil, "Test 15e Engine:Start fails closed when GetGuildBankTabInfo is nil")
+		assertEqual(libItemMove.lastContext, nil, "Test 15e context remains nil when GetGuildBankTabInfo is nil")
+		assertTrue(hasChatMessageSince(msgStart, "No items need consolidation."), "Test 15e Engine:Start printed No items need consolidation.")
+
+		BagnonConsolidatorDB.personalBanks = {}
+		BagnonConsolidatorDB.guildTabs = {}
+		BagnonConsolidatorDB.conflicts = {}
+		mockGuildBagInfo = {
+			[1] = { items = { [1] = { itemID = 2589, stackCount = 20, hyperlink = "[Linen Cloth]" } } },
+		}
+		local snapSuccess = Addon.TakeSnapshot(mockGuildFrame)
+		assertTrue(snapSuccess, "Test 15e TakeSnapshot succeeds when GetGuildBankTabInfo is nil")
+		assertTrue(BagnonConsolidatorDB.guildTabs[guildKey] ~= nil and BagnonConsolidatorDB.guildTabs[guildKey][2589] ~= nil, "Test 15e TakeSnapshot mapped item with nil GetGuildBankTabInfo")
+		if BagnonConsolidatorDB.guildTabs[guildKey] and BagnonConsolidatorDB.guildTabs[guildKey][2589] then
+			assertEqual(BagnonConsolidatorDB.guildTabs[guildKey][2589].tab, 1, "Test 15e TakeSnapshot recorded tab 1")
+			assertEqual(BagnonConsolidatorDB.guildTabs[guildKey][2589].tabName, nil, "Test 15e TakeSnapshot recorded nil tabName")
+		end
+
+		BagnonConsolidatorDB.personalBanks = prevPersonalBanks
+		BagnonConsolidatorDB.guildTabs = prevGuildTabs
+		BagnonConsolidatorDB.tabNames = prevTabNames
+		BagnonConsolidatorDB.conflicts = prevConflicts
+		BagnonConsolidatorDB.ignored = prevIgnored
+	end
+
+	mockGuildFrame.shown = prevGuildShown
+	mockBankFrame.shown = prevBankShown
+	mockGuildBagInfo = prevGuildBagInfo
+	mockInventorySlots = prevInventorySlots
+	_G["C_Bank"] = prevCBank
+	_G["GetGuildBankTabInfo"] = prevGetGuildBankTabInfo
+	_G["C_Container"] = prevCContainer
+
+	print("[PASS] Test 15: Guild Bank Soulbound Filtering & GetGuildBankTabInfo Guards (#13)")
+end
+
 print(string.format("\n=== ALL %d UNIT TESTS PASSED SUCCESSFULLY! ===", numPassed))

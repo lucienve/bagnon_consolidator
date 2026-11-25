@@ -39,7 +39,7 @@ KEYRING_CONTAINER = KEYRING_CONTAINER
 ---@type BagnonConsolidatorDB
 BagnonConsolidatorDB = BagnonConsolidatorDB
 
----@type fun(tab: number): string|nil, string|nil, boolean|nil, boolean|nil, number|nil, number|nil
+---@type (fun(tab: number): string|nil, string|nil, boolean|nil, boolean|nil, number|nil, number|nil)|nil
 GetGuildBankTabInfo = GetGuildBankTabInfo
 
 ---@type fun(bag: number, slot: number): string|nil, number|nil, boolean|nil, number|nil, boolean|nil, boolean|nil, string|nil, boolean|nil, boolean|nil, number|nil
@@ -213,6 +213,7 @@ function BagnonFrame:Super(class) end
 
 ---@class BagnonItemInfo
 ---@field isLocked boolean|nil
+---@field isBound boolean|nil
 ---@field itemID number|nil
 ---@field stackCount number|nil
 ---@field hyperlink string|nil

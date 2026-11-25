@@ -55,6 +55,23 @@ local function GetKeyringContainer()
 	return -2
 end
 
+---@param item BagnonItemInfo
+---@param bag number
+---@param slot number
+---@return boolean
+local function IsItemSoulbound(item, bag, slot)
+	if item.isBound ~= nil then
+		return item.isBound == true
+	end
+	if C_Container and C_Container.GetContainerItemInfo then
+		local info = C_Container.GetContainerItemInfo(bag --[[@as Enum.BagIndex]], slot)
+		if type(info) == "table" then
+			return info.isBound == true
+		end
+	end
+	return false
+end
+
 function Engine:Start(frame)
 	if isConsolidating then
 		Addon.Print(L["Consolidation is already in progress."])
@@ -101,7 +118,11 @@ function Engine:Start(frame)
 								local entry = guildKey and BagnonConsolidatorDB.guildTabs[guildKey] and BagnonConsolidatorDB.guildTabs[guildKey][id]
 								local targetTab = entry and entry.tab
 								if targetTab then
-									local _, _, _, canDeposit = GetGuildBankTabInfo(targetTab)
+									local canDeposit = false
+									if GetGuildBankTabInfo then
+										local _, _, _, tabCanDeposit = GetGuildBankTabInfo(targetTab)
+										canDeposit = not not tabCanDeposit
+									end
 									if canDeposit then
 										backpackMatches[id] = targetTab
 									else
@@ -143,11 +164,15 @@ function Engine:Start(frame)
 						local id = item.itemID
 						local tab = backpackMatches[id]
 						if tab then
-							local itemKey = tostring(id)
-							local count = item.stackCount or 1
-							multiTabQueue[tab] = multiTabQueue[tab] or {}
-							multiTabQueue[tab][itemKey] = (multiTabQueue[tab][itemKey] or 0) + count
-							totalToMove = totalToMove + count
+							if not IsItemSoulbound(item, bag, slot) then
+								local itemKey = tostring(id)
+								local count = item.stackCount or 1
+								multiTabQueue[tab] = multiTabQueue[tab] or {}
+								multiTabQueue[tab][itemKey] = (multiTabQueue[tab][itemKey] or 0) + count
+								totalToMove = totalToMove + count
+							else
+								Addon.Debug("Skipping soulbound item: " .. (item.hyperlink or tostring(id)))
+							end
 						end
 					end
 				end

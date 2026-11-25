@@ -196,7 +196,7 @@ local function TakeSnapshot(targetFrame)
 					Addon.Debug("Snapshot: Multi-tab conflict for " .. itemName)
 				elseif tabCount == 1 and targetTab then
 					BagnonConsolidatorDB.conflicts[guildKey][id] = nil
-					local tabName = GetGuildBankTabInfo(targetTab)
+					local tabName = GetGuildBankTabInfo and GetGuildBankTabInfo(targetTab)
 					BagnonConsolidatorDB.guildTabs[guildKey][id] = {
 						tab = targetTab,
 						name = itemName,
