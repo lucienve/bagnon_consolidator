@@ -11,10 +11,11 @@ the Bagnon Consolidator addon.
    `Bagnon.Inventory.GetExtraButtons()` at runtime to insert a custom button
    into the backpack frame.
 3. **Loading Manifest**: Uses `Bagnon_Consolidator.toc` to load `main.xml`,
-   which loads `libs/libItemMove/libItemMove.xml`, followed by modular
-   scripts in `core/` (`init.lua`, `utils.lua`, `snapshot.lua`, `engine.lua`)
-   and `ui/` (`button.lua`, `viewer.lua`, `options.lua`) in topological
-   dependency order.
+   which loads `libs/libItemMove/libItemMove.xml`,
+   `libs/AceLocale-3.0/AceLocale-3.0.xml`, and `locales/locales.xml`, followed
+   by modular scripts in `core/` (`init.lua`, `utils.lua`, `snapshot.lua`,
+   `engine.lua`) and `ui/` (`button.lua`, `viewer.lua`, `options.lua`) in
+   topological dependency order.
 4. **Guild Bank Safeguard**: Skip items found in multiple guild bank tabs to
    preserve player categorization; flag under Conflicts.
 5. **Guild Bank Processing**: Processed tab-by-tab sequentially. Handled by
@@ -25,28 +26,34 @@ the Bagnon Consolidator addon.
 7. **Coding Conventions**: Tab indentation for Lua scripts, usage of
    `LibStub('C_Everywhere')` wrapper library, and syntax verification using
    `luac -p`.
-8. **Keyring Container Exemption**: Excludes the keyring container (`bag == -2`
-   or `KEYRING_CONTAINER`) during inventory scans to prevent client-side silent
-   errors.
-9. **JIT Namespace Compatibility**: Directly invokes JIT-emulated namespace
-   functions like `C.C_Item.GetItemInfo` and falls back to native global
-   `C_Container` table methods when the emulated layer fails.
+8. **Keyring Container Exemption**: Excludes the dynamically resolved keyring
+   container via `GetKeyringContainer()` (`Enum.BagIndex.Keyring` →
+   `KEYRING_CONTAINER` → `-2`) during inventory scans to avoid scanning keyring
+   slots and prevent colliding with `-2` (`Characterbanktab`) on modern clients.
+9. **Cross-Flavor Item API & Fallback Usage**: Uses `LibStub('C_Everywhere')`
+   (`C.C_Item.GetItemInfo`, `C.C_Item.GetItemIconByID`) for item lookups and
+   icons across flavors, delegating container scanning/movement to
+   `LibItemMove-1.0` and falling back to `C_Container.GetContainerItemInfo` only
+   for `item.isBound` in `IsItemSoulbound()` when `Bagnon` omits it.
 10. **Library Move Engine**: Fully delegates transaction scheduling, slot
     pairing, cursor safety check, item split commands, lock check retries, and
     event-driven transaction verification to `LibItemMove-1.0`.
 11. **Additive Snapshot Ingestion**: `Addon.TakeSnapshot()` performs
     non-destructive scans of the active container, adding newly discovered
     items and updating relocations while preserving out-of-stock items.
-12. **Ignore List Protection**: Mappings deleted via `[✕]` in the active view
-    are moved to `BagnonConsolidatorDB.ignored`, preventing both future
+12. **Ignore List Protection**: Mappings deleted via `Ignore [X]` in the active
+    view are moved to `BagnonConsolidatorDB.ignored`, preventing both future
     consolidation and re-ingestion during subsequent snapshots.
-13. **Strict Personal/Guild Mutual Exclusivity**: If an item is present in both
-    personal bank and guild bank (or across multiple guild tabs), it is mapped
-    to `conflicts` (Go Nowhere) and skipped during consolidation.
-14. **Management Viewer Frame (`ui/viewer.lua`)**: Provides a standalone GUI
-    modal to inspect destinations (`Personal`, `Guild Tabs 1–8`, `Conflicts`,
-    `Ignored`), filter items in real time, and prune entries via per-item `[✕]`
-    buttons.
+13. **Strict Personal/Guild Mutual Exclusivity**: If an item is present across
+    multiple guild tabs, it is mapped to `conflicts[guildKey]` and stripped from
+    `guildTabs[guildKey]`. If an item is present in both personal bank and guild
+    bank, the guild bank mapping is stripped into `conflicts[guildKey]` while the
+    personal bank mapping is retained.
+14. **Management Viewer Frame (`ui/viewer.lua`)**: Provides a standalone movable
+    window registered in `UISpecialFrames` (for `Escape`-key dismissal) to
+    inspect destinations (`Personal`, `Guild Bank >` dropdown for
+    `1..MAX_GUILDBANK_TABS`, `Conflicts`, `Ignored`), filter items in real time,
+    and manage entries via `Ignore [X]`, `Restore`, and `Clear` buttons.
 15. **Context Menu Shortcuts**: Right-clicking the backpack Consolidate button
     brings up a `MenuUtil` context menu offering *Open Mappings Viewer...*,
     *Take Snapshot*, *Reset Mappings...*, and the *Enable Debug Logs* toggle.
@@ -59,10 +66,10 @@ the Bagnon Consolidator addon.
     and lock checks to handle synchronization lag during peak hours.
 19. **Localization Architecture**: Utilizes `AceLocale-3.0` embedded in
     `libs/AceLocale-3.0/` with base dictionary `locales/enUS.lua` (`isDefault =
-    true`) and modular skeletons in `locales/` (`deDE`, `frFR`, `esES`, `esMX`,
-    `ruRU`, `zhCN`, `zhTW`, `koKR`, `ptBR`, `itIT`).
+    true`) and complete localized dictionaries in `locales/` (`deDE`, `frFR`,
+    `esES`, `esMX`, `ruRU`, `zhCN`, `zhTW`, `koKR`, `ptBR`, `itIT`).
 20. **CurseForge Packaging & CI/CD**: Uses `BigWigsMods/packager@v2` triggered
-    on Git release tags (e.g. `v1.0.0`) via `.github/workflows/release.yml`.
+    on Git release tags (e.g. `vX.Y.Z`) via `.github/workflows/release.yml`.
     Dynamic version stamping is enabled with `## Version: @project-version@`,
     CurseForge project mapping via `## X-Curse-Project-ID: 1656218`, and
     packaging dependency management via `.pkgmeta`. Releases use
@@ -79,27 +86,44 @@ the Bagnon Consolidator addon.
     - *Pillar 1 (LuaLS)*: Type checking via `.luarc.json` and `types.lua`,
       eliminating dummy table clobbering.
     - *Pillar 2 (wow_lua_lint)*: Zero-warning domain and taint linting across
-      Retail, Mists of Pandaria Classic, and Classic Era flavors.
+      Retail, Mists of Pandaria Classic, Classic Era, and WoW Forever flavors.
     - *Pillar 3 (Manifest & Schema Integrity)*: Strict `wow_toc_validate` and
       `wow_xml_validate` compliance with schema namespace in `main.xml`.
     - *Asset Resolution*: Uses numeric FileDataIDs (`135769`, `134400`) for
       direct CASC texture lookups with canonical inline comments.
     - *Docs Structure*: Standardized documentation in `docs/`.
-23. **WoW Forever & Multi-Client Support**: Supports Retail (Midnight 12.1,
-    Interface 120100), Mists of Pandaria Classic (Interface 50504), Classic
-    Era (Interface 11509), and WoW Forever (Project Camelot, Interface 16001).
-    Generates `_Camelot.toc` via the BigWigs packager `Interface-Forever: 16001`
-    directive.
+23. **Multi-Client & WoW Forever Support**: Supports Retail, Mists of Pandaria
+    Classic, Classic Era, and WoW Forever via packager directives
+    (`Interface-Mainline`, `Interface-Mists`, `Interface-Classic`,
+    `Interface-Forever`, generating `_Camelot.toc` for WoW Forever). See
+    `Bagnon_Consolidator.toc` as the single source of truth for active interface
+    numbers.
 24. **Cross-Flavor Icon Resolution & Standard Templates**: Uses
     `C.C_Item.GetItemIconByID` with numeric FileDataID `134400` fallback to
     safely resolve uncached item icons across modern and Classic clients, and
     inherits `UICheckButtonTemplate` for settings checkboxes.
+25. **Character vs. Account/Warband Bank Isolation**: `GetAccountBankBagSet()`
+    excludes Account/Warband Bank tabs from personal bank snapshots, and
+    `CanUseCharacterBank()` guards personal bank consolidation against remote
+    Warband-only bank sessions.
+26. **Eligibility Pre-Filtering**: Personal Bank consolidation filters out
+    disallowed items via `C_Bank.IsItemAllowedInBankType`, and Guild Bank
+    consolidation filters out soulbound items via `IsItemSoulbound()` and
+    nil-guards `GetGuildBankTabInfo`.
+27. **Cross-Flavor `SOUNDKIT` Playback Guards**: `PlaySoundSafe()` validates
+    `PlaySound` and numeric `SOUNDKIT` constants across all flavors
+    (`UI_BAG_SORTING_01` with `IG_BACKPACK_CLOSE` fallback on completion,
+    `IG_QUEST_CANCEL` on abort/empty).
+28. **Viewer Escape Close & Scoped Reset**: `BagnonConsolidatorViewerFrame`
+    registers in `UISpecialFrames` for `Escape`-key dismissal, and `Reset
+    Mappings...` maps viewer tabs (`personal`, `guild`, `conflicts`/`ignored` →
+    `all`) to valid reset scopes.
 
 ## Completed Tasks
 
 - Implemented the Snapshot & Viewer Frame architecture with additive merge
   engine.
-- Added `BagnonConsolidatorViewer` modal window with destination tabs, search
+- Added `BagnonConsolidatorViewer` window with destination tabs, search
   filtering, and per-item removal/ignore controls.
 - Integrated right-click context menu options (*Take Snapshot*, *Reset
   Mappings...*, *Open Mappings Viewer...*, *Enable Debug Logs*).
@@ -126,18 +150,17 @@ the Bagnon Consolidator addon.
 - Updated `Bagnon_Consolidator.toc` with missing packager flavor directive
   (`Interface-Mists`), pruned retired expansions (Cataclysm, Wrath, BCC), and
   converted `IconTexture` to numeric FileDataID `135738`.
-- Updated `libs/libItemMove` submodule reference to `2813b54` containing Retail
-  11.0/12.0 container resolution enhancements and cleanups.
+- Updated `libs/libItemMove` submodule reference to `2813b54` containing modern
+  Retail container resolution enhancements and cleanups.
 - Fixed consolidate button and addon icon texture FileDataID from `135738`
   (`spell_arcane_manatap`) to `135769` (`spell_chargepositive`).
 - Updated `Bagnon_Consolidator.toc` and `libs/libItemMove` submodule (`e5390f8`)
-  for WoW Forever (Camelot, Interface 16001) and bumped Retail interface to
-  120100.
-- Synchronized addon with Mists of Pandaria Classic (`50504`) and current
-  development rules: updated icon resolution to `C.C_Item.GetItemIconByID`,
-  migrated options CheckButton to `UICheckButtonTemplate`, typed `MenuUtil` and
-  `Settings` in `types.lua`, added typed parameters to `core/init.lua`, expanded
-  `luac -p` coverage in CI, and updated `.agents/` maintenance directives.
+  for WoW Forever and bumped Retail interface metadata.
+- Synchronized addon with Mists of Pandaria Classic and current development
+  rules: updated icon resolution to `C.C_Item.GetItemIconByID`, migrated options
+  CheckButton to `UICheckButtonTemplate`, typed `MenuUtil` and `Settings` in
+  `types.lua`, added typed parameters to `core/init.lua`, expanded `luac -p`
+  coverage in CI, and updated `.agents/` maintenance directives.
 - Prepared v1.1.0 minor release notes in `CHANGELOG.md`.
 - Updated `libs/libItemMove` submodule to `41d3be8`, resolving runtime taint
   from `core/types.lua` (Bagnon Consolidator `#7` / `libItemMove#4`) and WoW
@@ -146,6 +169,22 @@ the Bagnon Consolidator addon.
   Mists warbank/guildbank guards, Reagent Bag family matching, negative
   item-link IDs, sequential partial-stack accumulation, and `Pickup` for
   full-stack/unstackable moves.
+- Pre-filtered bank-disallowed items in `core/engine.lua` via
+  `C_Bank.IsItemAllowedInBankType` (PR `#14`).
+- Isolated Character Bank tabs from Account/Warband Bank tabs in
+  `core/snapshot.lua` and added `C_Bank.CanUseBank` guard in `core/engine.lua`
+  (PR `#15`).
+- Added cross-flavor `SOUNDKIT` playback guards and replaced raw sound ID `847`
+  with `IG_QUEST_CANCEL` in `core/engine.lua` (PR `#16`).
+- Resolved keyring container dynamically from `Enum.BagIndex.Keyring` in
+  `core/engine.lua` (PR `#17`).
+- Excluded soulbound items from Guild Bank consolidation queues and nil-guarded
+  `GetGuildBankTabInfo` in `core/engine.lua` and `core/snapshot.lua` (PR `#18`).
+- Fixed `Reset Mappings...` scope mapping for `Conflicts` and `Ignored` tabs in
+  `ui/viewer.lua` (PR `#19`).
+- Registered `BagnonConsolidatorViewerFrame` in `UISpecialFrames` for `Escape`
+  close support in `ui/viewer.lua` (PR `#20`).
+- Audited and updated project documentation and code comments for accuracy.
 
 ## Release Workflow Guide
 
@@ -155,8 +194,8 @@ To publish a new version to CurseForge:
 2. Create and push a semver Git tag:
 
    ```bash
-   git tag v1.1.0
-   git push origin v1.1.0
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
    ```
 
 3. The `.github/workflows/release.yml` workflow will automatically run

@@ -1,5 +1,5 @@
 --[[
-	Bagnon Consolidator - Mappings Viewer Modal Window
+	Bagnon Consolidator - Mappings Viewer Window
 	Author: LVE
 	All Rights Reserved
 --]]

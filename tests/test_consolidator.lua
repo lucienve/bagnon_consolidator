@@ -1,7 +1,10 @@
 --[[
 	Bagnon Consolidator - Unit Test Suite
 	Tests additive snapshot ingestion, conflict detection, zero-stock retention,
-	ignore filtering, queue generation, and viewer data operations in a mocked WoW environment.
+	ignore filtering, queue generation, bank eligibility pre-filtering, Warband
+	bank isolation, SOUNDKIT guards, dynamic keyring resolution, guild soulbound
+	and API guards, viewer reset scopes, and UISpecialFrames Escape close in a
+	mocked WoW environment.
 --]]
 
 local numPassed = 0
@@ -628,7 +631,7 @@ do
 end
 
 -- ----------------------------------------------------
--- Test 10: Viewer Data Operations & Filter Operations
+-- Test 10: Viewer Operations & Toggle State
 -- ----------------------------------------------------
 do
 	local charKey = Addon.GetCharacterKey()
@@ -824,7 +827,7 @@ do
 	assertTrue(guildKey ~= nil, "guildKey is valid for Test 12")
 
 	if charKey and guildKey then
-		-- 12a: Retail 120100 layout (CharacterBankTab_1..6 = 6..11, AccountBankTab_1..5 = 12..16)
+		-- 12a: Modern Retail layout (CharacterBankTab_1..6 = 6..11, AccountBankTab_1..5 = 12..16)
 		Addon.BankBags = { 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 }
 		_G["Enum"] = {
 			BankType = { Character = 0, Guild = 1, Account = 2 },
@@ -899,7 +902,7 @@ do
 		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][2589], nil, "Test 12a nil mode excludes AccountBankTab_1")
 		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][1205], nil, "Test 12a nil mode excludes AccountBankTab_4")
 
-		-- 12b: WoW Forever 16001 layout (CharacterBankTab_1..9 = 6..14, AccountBankTab_1..9 = 15..23)
+		-- 12b: WoW Forever layout (CharacterBankTab_1..9 = 6..14, AccountBankTab_1..9 = 15..23)
 		Addon.BankBags = { 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 }
 		_G["Enum"] = {
 			BankType = { Character = 0, Guild = 1, Account = 2 },

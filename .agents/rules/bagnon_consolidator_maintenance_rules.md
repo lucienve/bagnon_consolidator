@@ -23,10 +23,17 @@ components:
     (LVE), Interface versions, and specifies `main.xml` as the entry manifest.
   - `main.xml`: XML manifest loading Lua scripts via `<Script>` tag to respect
     BagBrother/Bagnon load order guidelines.
+  - `types.lua`: EmmyLua type definitions and Blizzard API stubs.
   - `core/`: Modular core engine scripts (`init.lua`, `utils.lua`,
     `snapshot.lua`, `engine.lua`).
   - `ui/`: User interface and configuration components (`button.lua`,
     `viewer.lua`, `options.lua`).
+  - `locales/`: `locales.xml` manifest and `AceLocale-3.0` translation
+    dictionaries.
+  - `libs/`: Embedded libraries (`AceLocale-3.0/` external, `libItemMove/`
+    submodule).
+  - `tests/`: Mock unit regression test suite (`test_consolidator.lua`).
+  - `scripts/`: Helper scripts (`dump_mappings.lua`, `setup_types.sh`).
 - **docs/**: Documentation containing architectural specifications and plans.
   - `architecture.md`: Addon design, algorithms, UI hooks, and database
     scanning details.
@@ -86,8 +93,10 @@ All changes must strictly follow these formatting and registration guidelines:
     transaction verification, and slot pairing are delegated to
     `LibItemMove-1.0`.
   - Queue item moves via `LibItemMove:Move(queue, context, callback)`.
-  - Handle asynchronous events gracefully: `PROGRESS`, `UPDATE_UI`, `DONE`,
-    `TIMEOUT_ERROR`, `CURSOR_LOCKED_ERROR`, and `PERMISSION_ERROR`.
+  - Handle asynchronous callback events in `core/engine.lua` gracefully:
+    `PROGRESS`, `DONE`, `TIMEOUT_ERROR`, `CURSOR_LOCKED_ERROR`, and
+    `PERMISSION_ERROR` (`LibItemMove-1.0` also emits `UPDATE_UI`, while Bagnon
+    updates its frames reactively from WoW events).
   - Enforce combat lockdown safety checks (`InCombatLockdown()`) prior to
     starting consolidation runs.
 
