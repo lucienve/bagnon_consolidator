@@ -61,6 +61,40 @@ local function ResetMappings(scope)
 	end
 end
 
+---@return table<number, boolean>
+local function GetAccountBankBagSet()
+	local accountBags = {}
+	local hasModernBank = false
+
+	if C_Bank and C_Bank.FetchPurchasedBankTabIDs then
+		hasModernBank = true
+		local bankTypeAccount = (Enum and Enum.BankType and Enum.BankType.Account) or 2
+		local tabs = C_Bank.FetchPurchasedBankTabIDs(bankTypeAccount)
+		if type(tabs) == "table" then
+			for _, tabID in ipairs(tabs) do
+				if type(tabID) == "number" then
+					accountBags[tabID] = true
+				end
+			end
+		end
+	end
+
+	local bagIndex = Enum and Enum.BagIndex --[[@as table<string, number?>]]
+	if type(bagIndex) == "table" and (hasModernBank or type(bagIndex["CharacterBankTab_1"]) == "number") then
+		local i = 1
+		while true do
+			local tabID = bagIndex["AccountBankTab_" .. i]
+			if type(tabID) ~= "number" then
+				break
+			end
+			accountBags[tabID] = true
+			i = i + 1
+		end
+	end
+
+	return accountBags
+end
+
 local function TakeSnapshot(targetFrame)
 	if not BagnonConsolidatorDB then return false end
 
@@ -188,32 +222,37 @@ local function TakeSnapshot(targetFrame)
 		local skippedIgnoredCount = 0
 
 		if Addon.BankBags then
+			local accountBankBags = GetAccountBankBagSet()
 			for _, bag in ipairs(Addon.BankBags) do
-				for slot = 1, frame:NumSlots(bag) do
-					local item = frame:GetItemInfo(bag, slot)
-					if item and item ~= Addon.None and item.itemID then
-						local id = item.itemID --[[@as number]]
-						local itemName = Addon.GetItemName and Addon.GetItemName(item) or string.format(L["Item %d"], id)
+				if accountBankBags[bag] then
+					Addon.Debug("Snapshot: Skipping Account Bank container " .. tostring(bag))
+				else
+					for slot = 1, frame:NumSlots(bag) do
+						local item = frame:GetItemInfo(bag, slot)
+						if item and item ~= Addon.None and item.itemID then
+							local id = item.itemID --[[@as number]]
+							local itemName = Addon.GetItemName and Addon.GetItemName(item) or string.format(L["Item %d"], id)
 
-						if BagnonConsolidatorDB.ignored and BagnonConsolidatorDB.ignored[id] then
-							skippedIgnoredCount = skippedIgnoredCount + 1
-						else
-							if BagnonConsolidatorDB.personalBanks and BagnonConsolidatorDB.personalBanks[charKey] then
-								BagnonConsolidatorDB.personalBanks[charKey][id] = itemName
-								mappedCount = mappedCount + 1
-							end
+							if BagnonConsolidatorDB.ignored and BagnonConsolidatorDB.ignored[id] then
+								skippedIgnoredCount = skippedIgnoredCount + 1
+							else
+								if BagnonConsolidatorDB.personalBanks and BagnonConsolidatorDB.personalBanks[charKey] then
+									BagnonConsolidatorDB.personalBanks[charKey][id] = itemName
+									mappedCount = mappedCount + 1
+								end
 
-							if BagnonConsolidatorDB.guildTabs then
-								for gKey, gItems in pairs(BagnonConsolidatorDB.guildTabs) do
-									if gItems and gItems[id] then
-										gItems[id] = nil
-										if BagnonConsolidatorDB.conflicts then
-											BagnonConsolidatorDB.conflicts[gKey] = BagnonConsolidatorDB.conflicts[gKey] or {}
-											BagnonConsolidatorDB.conflicts[gKey][id] = {
-												name = itemName,
-												personal = true,
-												reason = string.format(L["Present in personal bank of %s"], tostring(charKey))
-											}
+								if BagnonConsolidatorDB.guildTabs then
+									for gKey, gItems in pairs(BagnonConsolidatorDB.guildTabs) do
+										if gItems and gItems[id] then
+											gItems[id] = nil
+											if BagnonConsolidatorDB.conflicts then
+												BagnonConsolidatorDB.conflicts[gKey] = BagnonConsolidatorDB.conflicts[gKey] or {}
+												BagnonConsolidatorDB.conflicts[gKey][id] = {
+													name = itemName,
+													personal = true,
+													reason = string.format(L["Present in personal bank of %s"], tostring(charKey))
+												}
+											end
 										end
 									end
 								end

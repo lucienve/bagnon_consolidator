@@ -29,6 +29,15 @@ local function IsAllowedInCharacterBank(bag, slot)
 	return true
 end
 
+---@return boolean
+local function CanUseCharacterBank()
+	if C_Bank and C_Bank.CanUseBank then
+		local bankTypeCharacter = (Enum and Enum.BankType and Enum.BankType.Character) or 0
+		return not not C_Bank.CanUseBank(bankTypeCharacter)
+	end
+	return true
+end
+
 function Engine:Start(frame)
 	if isConsolidating then
 		Addon.Print(L["Consolidation is already in progress."])
@@ -36,6 +45,11 @@ function Engine:Start(frame)
 	end
 
 	local isGuild = frame.id == 'guild'
+	if not isGuild and not CanUseCharacterBank() then
+		PlaySound(847)
+		Addon.Print(L["Bank or Guild Bank must be open and active."])
+		return
+	end
 	local backpackMatches = {}
 	local warnedIgnored = {}
 	local warnedConflicts = {}
