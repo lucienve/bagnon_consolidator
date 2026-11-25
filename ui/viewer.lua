@@ -361,12 +361,15 @@ local function CreateViewerFrame()
 	resetBtn:SetText(L["Reset Mappings..."])
 	resetBtn:SetScript("OnClick", function()
 		local label = L["All Addon Data"]
+		local scope = "all"
 		if activeTab == "guild" then
 			label = (Addon.GetGuildKey and Addon.GetGuildKey()) or L["Guild Bank"]
+			scope = "guild"
 		elseif activeTab == "personal" then
 			label = (Addon.GetCharacterKey and Addon.GetCharacterKey()) or L["Personal Bank"]
+			scope = "personal"
 		end
-		StaticPopup_Show("BAGNON_CONSOLIDATOR_RESET_CONFIRM", label, nil, activeTab)
+		StaticPopup_Show("BAGNON_CONSOLIDATOR_RESET_CONFIRM", label, nil, scope)
 	end)
 
 	-- Main Navigation Bar (Personal, Guild, Conflicts, Ignored)
