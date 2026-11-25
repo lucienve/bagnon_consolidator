@@ -139,6 +139,13 @@ the Bagnon Consolidator addon.
   `Settings` in `types.lua`, added typed parameters to `core/init.lua`, expanded
   `luac -p` coverage in CI, and updated `.agents/` maintenance directives.
 * Prepared v1.1.0 minor release notes in `CHANGELOG.md`.
+* Updated `libs/libItemMove` submodule to `41d3be8`, resolving runtime taint
+  from `core/types.lua` (Bagnon Consolidator `#7` / `libItemMove#4`) and WoW
+  Forever 9-tab bank/warbank container IDs (Bagnon Consolidator `#8` /
+  `libItemMove#2`), plus virtual bank tab family safety (`libItemMove#3`),
+  Mists warbank/guildbank guards, Reagent Bag family matching, negative
+  item-link IDs, sequential partial-stack accumulation, and `Pickup` for
+  full-stack/unstackable moves.
 
 ## Release Workflow Guide
 
