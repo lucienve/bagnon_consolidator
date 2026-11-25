@@ -56,6 +56,7 @@ _G.SOUNDKIT = {
 }
 _G.StaticPopupDialogs = {}
 _G.StaticPopup_Show = function(which, text1, text2, data) end
+_G.UISpecialFrames = {}
 local playedSounds = {}
 _G.PlaySound = function(soundID)
 	if type(soundID) ~= "number" then
@@ -167,6 +168,9 @@ _G.CreateFrame = function(frameType, frameName, parent, template)
 		StartMoving = function(self) end,
 		StopMovingOrSizing = function(self) end,
 	}
+	if frameName and frameName ~= "" then
+		_G[frameName] = f
+	end
 	table.insert(eventFrames, f)
 	return f
 end
@@ -1864,6 +1868,86 @@ do
 	_G["StaticPopup_Show"] = prevStaticPopupShow
 
 	print("[PASS] Test 16: Viewer Reset Mappings Scope Across All Tabs (#3)")
+end
+
+-- ----------------------------------------------------
+-- Test 17: Viewer Escape Key Registration (UISpecialFrames) (#4)
+-- ----------------------------------------------------
+do
+	local function countSpecialFrameEntries(targetName)
+		local count = 0
+		if UISpecialFrames then
+			for _, name in ipairs(UISpecialFrames) do
+				if name == targetName then
+					count = count + 1
+				end
+			end
+		end
+		return count
+	end
+
+	-- 17a: Frame is registered once and repeated toggles do not add duplicates
+	assertEqual(countSpecialFrameEntries("BagnonConsolidatorViewerFrame"), 1, "Test 17a initial UISpecialFrames registration count")
+	Addon.Viewer:Toggle()
+	Addon.Viewer:Toggle()
+	assertEqual(countSpecialFrameEntries("BagnonConsolidatorViewerFrame"), 1, "Test 17a UISpecialFrames registration remains unique after toggles")
+
+	-- 17b: Simulated CloseSpecialWindows() hides viewer and preserves toggle parity
+	local viewerFrame = _G["BagnonConsolidatorViewerFrame"]
+	assertTrue(viewerFrame ~= nil, "Test 17b global BagnonConsolidatorViewerFrame exists")
+	if viewerFrame then
+		if not viewerFrame:IsShown() then
+			Addon.Viewer:Toggle()
+		end
+		assertTrue(viewerFrame:IsShown(), "Test 17b viewer is shown before simulated Escape")
+
+		local closedAny = false
+		if UISpecialFrames then
+			for _, frameName in pairs(UISpecialFrames) do
+				local specialFrame = _G[frameName]
+				if specialFrame and specialFrame:IsShown() then
+					specialFrame:Hide()
+					closedAny = true
+				end
+			end
+		end
+
+		assertTrue(closedAny, "Test 17b CloseSpecialWindows matched a shown special frame")
+		assertFalse(viewerFrame:IsShown(), "Test 17b viewer hidden after simulated Escape")
+
+		-- Re-opening via Toggle must immediately show the frame without toggle desync
+		Addon.Viewer:Toggle()
+		assertTrue(viewerFrame:IsShown(), "Test 17b viewer re-opens on first Toggle after Escape")
+		Addon.Viewer:Toggle()
+		assertFalse(viewerFrame:IsShown(), "Test 17b viewer closes cleanly on second Toggle")
+	end
+
+	-- 17c: Defensive nil guard when UISpecialFrames is nil
+	local prevViewer = Addon.Viewer
+	local prevUISpecialFrames = _G["UISpecialFrames"]
+	local prevGlobalViewer = _G["BagnonConsolidatorViewerFrame"]
+	local prevGlobalScroll = _G["BagnonConsolidatorScrollFrame"]
+	local prevEventFramesLen = #eventFrames
+
+	_G["UISpecialFrames"] = nil
+	loadAddonFile("ui/viewer.lua")
+	Addon.Viewer:Toggle()
+	local nilGuardViewer = _G["BagnonConsolidatorViewerFrame"]
+	assertTrue(nilGuardViewer ~= nil and nilGuardViewer:IsShown(), "Test 17c viewer opens without error when UISpecialFrames is nil")
+	Addon.Viewer:Toggle()
+	if nilGuardViewer then
+		assertFalse(nilGuardViewer:IsShown(), "Test 17c viewer closes cleanly when UISpecialFrames is nil")
+	end
+
+	for i = #eventFrames, prevEventFramesLen + 1, -1 do
+		table.remove(eventFrames, i)
+	end
+	_G["BagnonConsolidatorScrollFrame"] = prevGlobalScroll
+	_G["BagnonConsolidatorViewerFrame"] = prevGlobalViewer
+	_G["UISpecialFrames"] = prevUISpecialFrames
+	Addon.Viewer = prevViewer
+
+	print("[PASS] Test 17: Viewer Escape Key Registration (UISpecialFrames) (#4)")
 end
 
 print(string.format("\n=== ALL %d UNIT TESTS PASSED SUCCESSFULLY! ===", numPassed))

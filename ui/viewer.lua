@@ -327,6 +327,9 @@ local function CreateViewerFrame()
 	frame:SetScript("OnDragStart", frame.StartMoving)
 	frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 	frame:SetClampedToScreen(true)
+	if UISpecialFrames then
+		tinsert(UISpecialFrames, "BagnonConsolidatorViewerFrame")
+	end
 
 	frame:SetBackdrop({
 		bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",

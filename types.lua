@@ -17,6 +17,8 @@ SOUNDKIT = SOUNDKIT
 MAX_GUILDBANK_TABS = MAX_GUILDBANK_TABS
 ---@type number|nil
 KEYRING_CONTAINER = KEYRING_CONTAINER
+---@type string[]|nil
+UISpecialFrames = UISpecialFrames
 
 ---@class BagnonConsolidatorDBEntry
 ---@field tab number
