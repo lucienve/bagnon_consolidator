@@ -15,7 +15,7 @@ SOUNDKIT = SOUNDKIT
 
 ---@type number
 MAX_GUILDBANK_TABS = MAX_GUILDBANK_TABS
----@type number
+---@type number|nil
 KEYRING_CONTAINER = KEYRING_CONTAINER
 
 ---@class BagnonConsolidatorDBEntry

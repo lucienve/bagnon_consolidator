@@ -8,7 +8,6 @@
 local ADDON, Addon = (...):match('[^_]+'), _G[(...):match('[^_]+')]
 local LibItemMove = LibStub('LibItemMove-1.0') --[[@as LibItemMove]]
 local L = Addon.L or LibStub('AceLocale-3.0'):GetLocale('Bagnon_Consolidator')
-local KEYRING_CONTAINER = KEYRING_CONTAINER or -2
 
 local Engine = {}
 Addon.ConsolidateEngine = Engine
@@ -45,6 +44,17 @@ local function PlaySoundSafe(soundID)
 	end
 end
 
+---@return number
+local function GetKeyringContainer()
+	if Enum and Enum.BagIndex and type(Enum.BagIndex.Keyring) == "number" then
+		return Enum.BagIndex.Keyring
+	end
+	if type(KEYRING_CONTAINER) == "number" then
+		return KEYRING_CONTAINER
+	end
+	return -2
+end
+
 function Engine:Start(frame)
 	if isConsolidating then
 		Addon.Print(L["Consolidation is already in progress."])
@@ -63,11 +73,12 @@ function Engine:Start(frame)
 
 	local guildKey = isGuild and Addon.GetGuildKey and Addon.GetGuildKey() or nil
 	local charKey = (not isGuild) and Addon.GetCharacterKey and Addon.GetCharacterKey() or nil
+	local keyringContainer = GetKeyringContainer()
 
 	-- Scan Backpack to find matching items
 	if Addon.InventoryBags then
 		for _, bag in ipairs(Addon.InventoryBags) do
-			if bag ~= KEYRING_CONTAINER then
+			if bag ~= keyringContainer then
 				for slot = 1, Addon.Inventory:NumSlots(bag) do
 					local item = Addon.Inventory:GetItemInfo(bag, slot)
 					if item and item ~= Addon.None and item.itemID then
@@ -125,7 +136,7 @@ function Engine:Start(frame)
 
 	if isGuild then
 		for _, bag in ipairs(Addon.InventoryBags) do
-			if bag ~= KEYRING_CONTAINER then
+			if bag ~= keyringContainer then
 				for slot = 1, Addon.Inventory:NumSlots(bag) do
 					local item = Addon.Inventory:GetItemInfo(bag, slot)
 					if item and item ~= Addon.None and item.itemID then
@@ -144,7 +155,7 @@ function Engine:Start(frame)
 		end
 	else
 		for _, bag in ipairs(Addon.InventoryBags) do
-			if bag ~= KEYRING_CONTAINER then
+			if bag ~= keyringContainer then
 				for slot = 1, Addon.Inventory:NumSlots(bag) do
 					local item = Addon.Inventory:GetItemInfo(bag, slot)
 					if item and item ~= Addon.None and item.itemID then
