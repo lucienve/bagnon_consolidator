@@ -791,4 +791,280 @@ do
 	print("[PASS] Test 11: Personal Bank Pre-Filtering (C_Bank.IsItemAllowedInBankType)")
 end
 
+-- ----------------------------------------------------
+-- Test 12: Character Bank vs Account/Warband Bank Isolation (#10)
+-- ----------------------------------------------------
+do
+	local prevEnum = _G["Enum"]
+	local prevCBank = _G["C_Bank"]
+	local prevBankBags = Addon.BankBags
+	local prevBankSlots = mockBankSlots
+	local prevGuildBagInfo = mockGuildBagInfo
+	local prevInventorySlots = mockInventorySlots
+	local prevBankShown = mockBankFrame.shown
+	local prevGuildShown = mockGuildFrame.shown
+
+	local charKey = Addon.GetCharacterKey()
+	local guildKey = Addon.GetGuildKey()
+	assertTrue(charKey ~= nil, "charKey is valid for Test 12")
+	assertTrue(guildKey ~= nil, "guildKey is valid for Test 12")
+
+	if charKey and guildKey then
+		-- 12a: Retail 120100 layout (CharacterBankTab_1..6 = 6..11, AccountBankTab_1..5 = 12..16)
+		Addon.BankBags = { 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 }
+		_G["Enum"] = {
+			BankType = { Character = 0, Guild = 1, Account = 2 },
+			BagIndex = {
+				CharacterBankTab_1 = 6,
+				CharacterBankTab_2 = 7,
+				CharacterBankTab_3 = 8,
+				CharacterBankTab_4 = 9,
+				CharacterBankTab_5 = 10,
+				CharacterBankTab_6 = 11,
+				AccountBankTab_1 = 12,
+				AccountBankTab_2 = 13,
+				AccountBankTab_3 = 14,
+				AccountBankTab_4 = 15,
+				AccountBankTab_5 = 16,
+			},
+		} --[[@as any]]
+
+		local fetchMode = "partial"
+		_G["C_Bank"] = {
+			FetchPurchasedBankTabIDs = function(bankType)
+				if fetchMode == "nil" then
+					return nil
+				elseif fetchMode == "empty" then
+					return {}
+				end
+				if bankType == 2 then
+					return { 12, 13 }
+				end
+				return { 6, 7, 8, 9, 10, 11 }
+			end,
+		} --[[@as any]]
+
+		BagnonConsolidatorDB.personalBanks[charKey] = {}
+		BagnonConsolidatorDB.guildTabs[guildKey] = {
+			[2589] = { tab = 1, name = "Linen Cloth" },
+		}
+		BagnonConsolidatorDB.conflicts = {}
+		BagnonConsolidatorDB.ignored = {}
+
+		mockBankSlots = {
+			[6] = { [1] = { itemID = 2447, stackCount = 20, hyperlink = "[Peacebloom]" } },
+			[11] = { [1] = { itemID = 765, stackCount = 10, hyperlink = "[Silverleaf]" } },
+			[12] = { [1] = { itemID = 2589, stackCount = 20, hyperlink = "[Linen Cloth]" } },
+			[15] = { [1] = { itemID = 1205, stackCount = 5, hyperlink = "[Iron Ore]" } },
+		}
+		mockBankFrame.shown = true
+		mockGuildFrame.shown = false
+
+		assertTrue(Addon.TakeSnapshot(mockBankFrame), "Test 12a Retail snapshot succeeds")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][2447], "Peacebloom", "Test 12a CharacterBankTab_1 mapped")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][765], "Silverleaf", "Test 12a CharacterBankTab_6 mapped")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][2589], nil, "Test 12a purchased AccountBankTab_1 excluded")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][1205], nil, "Test 12a unreturned AccountBankTab_4 excluded")
+		assertTrue(BagnonConsolidatorDB.guildTabs[guildKey][2589] ~= nil, "Test 12a Guild item not stripped by Account tab")
+		assertEqual(BagnonConsolidatorDB.conflicts[guildKey], nil, "Test 12a no false Personal-vs-Guild conflict created")
+
+		-- Offline / empty and nil returns from FetchPurchasedBankTabIDs still isolate AccountBankTab_*
+		fetchMode = "empty"
+		BagnonConsolidatorDB.personalBanks[charKey] = {}
+		assertTrue(Addon.TakeSnapshot(mockBankFrame), "Test 12a empty FetchPurchasedBankTabIDs snapshot succeeds")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][2447], "Peacebloom", "Test 12a empty mode keeps CharacterBankTab_1")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][765], "Silverleaf", "Test 12a empty mode keeps CharacterBankTab_6")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][2589], nil, "Test 12a empty mode excludes AccountBankTab_1")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][1205], nil, "Test 12a empty mode excludes AccountBankTab_4")
+
+		fetchMode = "nil"
+		BagnonConsolidatorDB.personalBanks[charKey] = {}
+		assertTrue(Addon.TakeSnapshot(mockBankFrame), "Test 12a nil FetchPurchasedBankTabIDs snapshot succeeds")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][2447], "Peacebloom", "Test 12a nil mode keeps CharacterBankTab_1")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][765], "Silverleaf", "Test 12a nil mode keeps CharacterBankTab_6")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][2589], nil, "Test 12a nil mode excludes AccountBankTab_1")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][1205], nil, "Test 12a nil mode excludes AccountBankTab_4")
+
+		-- 12b: WoW Forever 16001 layout (CharacterBankTab_1..9 = 6..14, AccountBankTab_1..9 = 15..23)
+		Addon.BankBags = { 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 }
+		_G["Enum"] = {
+			BankType = { Character = 0, Guild = 1, Account = 2 },
+			BagIndex = {
+				CharacterBankTab_1 = 6,
+				CharacterBankTab_2 = 7,
+				CharacterBankTab_3 = 8,
+				CharacterBankTab_4 = 9,
+				CharacterBankTab_5 = 10,
+				CharacterBankTab_6 = 11,
+				CharacterBankTab_7 = 12,
+				CharacterBankTab_8 = 13,
+				CharacterBankTab_9 = 14,
+				AccountBankTab_1 = 15,
+				AccountBankTab_2 = 16,
+				AccountBankTab_3 = 17,
+				AccountBankTab_4 = 18,
+				AccountBankTab_5 = 19,
+				AccountBankTab_6 = 20,
+				AccountBankTab_7 = 21,
+				AccountBankTab_8 = 22,
+				AccountBankTab_9 = 23,
+			},
+		} --[[@as any]]
+
+		_G["C_Bank"] = {
+			FetchPurchasedBankTabIDs = function(bankType)
+				if bankType == 2 then
+					return { 15, 16, 17, 18, 19, 20, 21, 22, 23 }
+				end
+				return { 6, 7, 8, 9, 10, 11, 12, 13, 14 }
+			end,
+		} --[[@as any]]
+
+		BagnonConsolidatorDB.personalBanks[charKey] = {}
+		mockBankSlots = {
+			[6] = { [1] = { itemID = 2447, stackCount = 20, hyperlink = "[Peacebloom]" } },
+			[12] = { [1] = { itemID = 765, stackCount = 10, hyperlink = "[Silverleaf]" } },
+			[14] = { [1] = { itemID = 2589, stackCount = 15, hyperlink = "[Linen Cloth]" } },
+			[15] = { [1] = { itemID = 1205, stackCount = 5, hyperlink = "[Iron Ore]" } },
+			[23] = { [1] = { itemID = 1710, stackCount = 3, hyperlink = "[Greater Healing Potion]" } },
+		}
+
+		assertTrue(Addon.TakeSnapshot(mockBankFrame), "Test 12b Forever snapshot succeeds")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][2447], "Peacebloom", "Test 12b CharacterBankTab_1 (6) mapped")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][765], "Silverleaf", "Test 12b CharacterBankTab_7 (12) mapped")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][2589], "Linen Cloth", "Test 12b CharacterBankTab_9 (14) mapped")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][1205], nil, "Test 12b AccountBankTab_1 (15) excluded")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][1710], nil, "Test 12b AccountBankTab_9 (23) excluded")
+
+		-- 12c: Classic / Mists layout (C_Bank = nil, dead AccountBankTab_1..5 = 13..17, no CharacterBankTab_1)
+		_G["C_Bank"] = nil
+		_G["Enum"] = {
+			BagIndex = {
+				Bank = -1,
+				Reagentbank = -3,
+				BankBag_1 = 6,
+				BankBag_2 = 7,
+				BankBag_3 = 8,
+				BankBag_4 = 9,
+				BankBag_5 = 10,
+				BankBag_6 = 11,
+				BankBag_7 = 12,
+				AccountBankTab_1 = 13,
+				AccountBankTab_2 = 14,
+				AccountBankTab_3 = 15,
+				AccountBankTab_4 = 16,
+				AccountBankTab_5 = 17,
+			},
+		} --[[@as any]]
+		Addon.BankBags = { -1, -3, 5, 6, 7, 8, 9, 10, 11 }
+		BagnonConsolidatorDB.personalBanks[charKey] = {}
+		mockBankSlots = {
+			[-1] = { [1] = { itemID = 2447, stackCount = 20, hyperlink = "[Peacebloom]" } },
+			[-3] = { [1] = { itemID = 765, stackCount = 10, hyperlink = "[Silverleaf]" } },
+			[6] = { [1] = { itemID = 2589, stackCount = 15, hyperlink = "[Linen Cloth]" } },
+			[11] = { [1] = { itemID = 1205, stackCount = 5, hyperlink = "[Iron Ore]" } },
+		}
+
+		assertTrue(Addon.TakeSnapshot(mockBankFrame), "Test 12c Classic/Mists snapshot succeeds")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][2447], "Peacebloom", "Test 12c legacy Bank (-1) mapped")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][765], "Silverleaf", "Test 12c legacy Reagentbank (-3) mapped")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][2589], "Linen Cloth", "Test 12c legacy bag 6 mapped")
+		assertEqual(BagnonConsolidatorDB.personalBanks[charKey][1205], "Iron Ore", "Test 12c legacy bag 11 mapped")
+
+		-- 12d: Remote Warband-only bank access guard in Engine:Start
+		local canUseCalls = 0
+		local checkedTypes = {}
+		_G["Enum"] = {
+			BankType = { Character = 0, Guild = 1, Account = 2 },
+		} --[[@as any]]
+		_G["C_Bank"] = {
+			CanUseBank = function(bankType)
+				canUseCalls = canUseCalls + 1
+				table.insert(checkedTypes, bankType)
+				return bankType == 2
+			end,
+		} --[[@as any]]
+
+		BagnonConsolidatorDB.personalBanks[charKey] = { [2447] = "Peacebloom" }
+		BagnonConsolidatorDB.conflicts = {
+			[charKey] = {
+				[765] = { name = "Silverleaf" },
+			},
+		}
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2447, stackCount = 5, hyperlink = "[Peacebloom]" },
+				[2] = { itemID = 765, stackCount = 2, hyperlink = "[Silverleaf]" },
+			},
+		}
+
+		local libItemMove = LibStub('LibItemMove-1.0') --[[@as MockLibItemMove]]
+		libItemMove.lastMovedQueue = nil
+		libItemMove.lastContext = nil
+		mockBankFrame.shown = true
+		mockGuildFrame.shown = false
+
+		local chatMessages = (DEFAULT_CHAT_FRAME --[[@as { messages: string[] }]]).messages
+		local msgStart = #chatMessages
+
+		Addon.ConsolidateEngine:Start(mockBankFrame)
+
+		assertEqual(canUseCalls, 1, "Test 12d CanUseBank called once for personal bank")
+		assertEqual(checkedTypes[1], 0, "Test 12d checked Enum.BankType.Character (0)")
+		assertEqual(libItemMove.lastMovedQueue, nil, "Test 12d skipped LibItemMove:Move when Character Bank unusable")
+		assertEqual(libItemMove.lastContext, nil, "Test 12d context remains nil")
+
+		local sawBankRequired = false
+		local sawNoItems = false
+		local sawConflict = false
+		for i = msgStart + 1, #chatMessages do
+			if chatMessages[i]:find("Bank or Guild Bank must be open and active.", 1, true) then
+				sawBankRequired = true
+			end
+			if chatMessages[i]:find("No items need consolidation.", 1, true) then
+				sawNoItems = true
+			end
+			if chatMessages[i]:find("conflicting destinations", 1, true) then
+				sawConflict = true
+			end
+		end
+		assertTrue(sawBankRequired, "Test 12d printed Bank or Guild Bank must be open and active.")
+		assertFalse(sawNoItems, "Test 12d did not emit No items need consolidation.")
+		assertFalse(sawConflict, "Test 12d did not emit conflict warnings before aborting")
+
+		-- Guild Bank remains unaffected and does not call C_Bank.CanUseBank
+		canUseCalls = 0
+		BagnonConsolidatorDB.guildTabs[guildKey] = {
+			[2589] = { tab = 1, name = "Linen Cloth" },
+		}
+		mockInventorySlots = {
+			[0] = {
+				[1] = { itemID = 2589, stackCount = 10, hyperlink = "[Linen Cloth]" },
+			},
+		}
+		mockBankFrame.shown = false
+		mockGuildFrame.shown = true
+
+		Addon.ConsolidateEngine:Start(mockGuildFrame)
+
+		assertEqual(canUseCalls, 0, "Test 12d guild bank did not call C_Bank.CanUseBank")
+		assertEqual(libItemMove.lastContext, "BagToGuildBank", "Test 12d guild bank context unaffected")
+		assertTrue(libItemMove.lastMovedQueue ~= nil, "Test 12d guild moveQueue dispatched")
+		if libItemMove.lastMovedQueue and libItemMove.lastMovedQueue[1] then
+			assertEqual(libItemMove.lastMovedQueue[1]["2589"], 10, "Test 12d Linen Cloth queued for Tab 1")
+		end
+	end
+
+	mockGuildFrame.shown = prevGuildShown
+	mockBankFrame.shown = prevBankShown
+	mockInventorySlots = prevInventorySlots
+	mockGuildBagInfo = prevGuildBagInfo
+	mockBankSlots = prevBankSlots
+	Addon.BankBags = prevBankBags
+	_G["C_Bank"] = prevCBank
+	_G["Enum"] = prevEnum
+
+	print("[PASS] Test 12: Character Bank vs Account/Warband Bank Isolation (#10)")
+end
+
 print(string.format("\n=== ALL %d UNIT TESTS PASSED SUCCESSFULLY! ===", numPassed))
